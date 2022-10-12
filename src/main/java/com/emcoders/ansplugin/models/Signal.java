@@ -1,33 +1,30 @@
 package com.emcoders.ansplugin.models;
 
 import javafx.util.Pair;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
 public class Signal {
     private String id;
-    private String name_signal;
-    private float sampling;
-    private List<Float> points_signal = new ArrayList<>();
-    private List<Float> times_signal;
-    private List<Float> filtered_signal;
-    private List<Float> rr_peaks;
-    private List<Float> signal_Segment;
-    private List<Float> times_segment;
+    private List<Double> points_signal = new ArrayList<>();
     private List<Pair<Alert,Feature>> time_line;
+    private double end_time_signal;
 
-    public Signal(String path, float sampling, Integer type_signal) throws IOException {
-        get_name_signal(type_signal);   //Obtiene el nombre de la señal
-        this.sampling = sampling;
-        get_signal(path); //Obtiene point_signal
-        get_rpeaks(1);
-    }
-
-    public Signal(List<Pair<Alert,Feature>> time_line){
-        this.time_line = time_line;
+    public Signal(String path_api){
+        get_signal( System.getProperty("user.dir")  + "\\signals\\ecg.csv");
+        JSONArray dataObject = get_json_time_line(path_api);
+        this.time_line = create_time_line_signal(dataObject);
+        this.time_line = create_time_line_signal(dataObject);
+        this.end_time_signal = calculate_length_signal(time_line);
+        System.out.println(this.end_time_signal);
     }
 
     /*
@@ -42,13 +39,12 @@ public class Signal {
             int contador = 0;
             while (myReader.hasNextLine()) {
                 if(contador != 0){
-                    this.points_signal.add(Float.parseFloat(myReader.nextLine().split(";")[1]));
+                    this.points_signal.add(Double.parseDouble(myReader.nextLine().split(";")[1]));
                 }
                 else{
                     contador++;
                     myReader.nextLine();
                 }
-
             }
             myReader.close();
         } catch (FileNotFoundException e) {
@@ -58,56 +54,106 @@ public class Signal {
     }
 
     /*
-    Define el nombre la señal según su tipo
-    @param type_signal: tipo de señal
-    @return:            string con nombre de señal
-     */
-    public void get_name_signal(Integer type_signal){
-        if(type_signal == 1)
-            this.name_signal = "ECG";
-        else
-            this.name_signal = "PPG";
+   Obtiene time line en formato json del back proveniente de una API
+   @return:    Json con time line
+    */
+    public JSONArray get_json_time_line(String path_api){
+        final String URL_API = path_api;
+        JSONArray dataObject = null;
+
+
+        try {
+            URL url = new URL(URL_API);
+
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.connect();
+
+            //Check if connect is made
+            int responseCode = conn.getResponseCode();
+
+            // 200 OK
+            if (responseCode != 200) {
+                throw new RuntimeException("HttpResponseCode: " + responseCode);
+            } else {
+
+                StringBuilder informationString = new StringBuilder();
+                Scanner scanner = new Scanner(url.openStream());
+
+                while (scanner.hasNext()) {
+                    informationString.append(scanner.nextLine());
+                }
+                //Close the scanner
+                scanner.close();
+
+                //JSON simple library Setup with Maven is used to convert strings to JSON
+                JSONParser parse = new JSONParser();
+                dataObject = (JSONArray) parse.parse(String.valueOf(informationString));
+
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return dataObject;
     }
 
+   /*
+   Crea una línea de tiempo a partir del json leído en el servidor
+   @param dataObject:   Json con lista de objetos del análisis de la señal
+   @return:             Lista de Alert y Feature de cada segmento de la señal analizada
+    */
+    public List<Pair<Alert,Feature>> create_time_line_signal(JSONArray dataObject){
+        List<Pair<Alert,Feature>> time_line = new ArrayList<>();
+
+        for (int i =0; i < dataObject.size(); i++) {
+
+            //Obteniendo datos de json
+            JSONObject jsonObject = (JSONObject) dataObject.get(i);
+            float start_time = Float.parseFloat(jsonObject.get("start_time").toString());
+            float end_time = Float.parseFloat(jsonObject.get("end_time").toString());
+            String name_emotion = jsonObject.get("emotion").toString();
+            float ratio_coherence = Float.parseFloat(jsonObject.get("ratio_coherence").toString());
+            List<Pair<String, Float>> times_features = json_object_to_pair_float(jsonObject.get("time_df"));
+            List<Pair<String, Float>> freq_features = json_object_to_pair_float(jsonObject.get("freq_df"));
+
+            //Creando objetos para cada segmento analizado
+            Emotion emotion = new Emotion(name_emotion);
+            Feature feature = new Feature(times_features, freq_features, start_time, end_time);
+            Alert alert = new Alert(ratio_coherence, "", emotion, start_time, end_time);
+
+            //Agregando características y alerta del segmento de la señla a la línea de tiempo
+            Pair p = new Pair(alert, feature);
+            time_line.add(p);
+
+        }
+
+        return time_line;
+    }
     /*
-    Obtiene series de R-Peaks usando biosppy
-    @param signal:  señal cardiaca
-    @param type_signal: tipo de señal (ECG y PPG)
-    @param sampling:frecuencia de muestreo
-    @return:        rango de tiempo de la señal, señal filtrada y rpeaks
+    Convierte un json a una lista de pares String-Float
+    @param object:  Json del análisis de la señal leída
+    @return:        Lista de pares String-Float
      */
-    public void get_rpeaks(Integer type_signal) throws IOException {
-        String path = System.getProperty("user.dir") + "\\signals\\ecg.csv";
-        String cmd = System.getProperty("user.dir") + "\\pythonScripts\\signal.py";
-        if(type_signal == 1){
-            ProcessBuilder builder = new ProcessBuilder("py", cmd, path, "1","1000");
-            Process process = builder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            BufferedReader readers = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-            String lines = null;
-
-            while((lines=reader.readLine()) != null) {
-                System.out.println("lines" + lines);
-            }
-            while((lines=readers.readLine())!=null){
-                System.out.println("Error lines"  + lines);
-            }
-
+    public List<Pair<String, Float>> json_object_to_pair_float(Object object){
+        String[] list_array_object = object.toString().split(",");
+        List<Pair<String, Float>> list_pairs = new ArrayList<>();
+        for(int i = 0; i < list_array_object.length - 1; i = i + 2){
+            Pair p = new Pair(list_array_object[i], list_array_object[i+1]);
+            list_pairs.add(p);
         }
-        else{
+        return list_pairs;
+    }
 
-        }
-
+    public double calculate_length_signal(List<Pair<Alert,Feature>> time_line){
+        double length_signal = time_line.get(time_line.size()-1).getValue().getEnd_time();
+        return length_signal;
     }
 
 
-
-
-
-
     /*
-    * Sección de Getter y Setter
-    * */
+    Sección de Getter y Setter
+    */
 
     public String getId() {
         return id;
@@ -117,75 +163,5 @@ public class Signal {
         this.id = id;
     }
 
-    public String getName_signal() {
-        return name_signal;
-    }
 
-    public float getSampling() {
-        return sampling;
-    }
-
-    public void setSampling(float sampling) {
-        this.sampling = sampling;
-    }
-
-    public void setName_signal(String name_signal) {
-        this.name_signal = name_signal;
-    }
-
-    public List<Float> getPoints_signal() {
-        return points_signal;
-    }
-
-    public void setPoints_signal(List<Float> points_signal) {
-        this.points_signal = points_signal;
-    }
-
-    public List<Float> getTimes_signal() {
-        return times_signal;
-    }
-
-    public void setTimes_signal(List<Float> times_signal) {
-        this.times_signal = times_signal;
-    }
-
-    public List<Float> getFiltered_signal() {
-        return filtered_signal;
-    }
-
-    public void setFiltered_signal(List<Float> filtered_signal) {
-        this.filtered_signal = filtered_signal;
-    }
-
-    public List<Float> getRr_peaks() {
-        return rr_peaks;
-    }
-
-    public void setRr_peaks(List<Float> rr_peaks) {
-        this.rr_peaks = rr_peaks;
-    }
-
-    public List<Float> getSignal_Segment() {
-        return signal_Segment;
-    }
-
-    public void setSignal_Segment(List<Float> signal_Segment) {
-        this.signal_Segment = signal_Segment;
-    }
-
-    public List<Float> getTimes_segment() {
-        return times_segment;
-    }
-
-    public void setTimes_segment(List<Float> times_segment) {
-        this.times_segment = times_segment;
-    }
-
-    public List<Pair<Alert, Feature>> getTime_line() {
-        return time_line;
-    }
-
-    public void setTime_line(List<Pair<Alert, Feature>> time_line) {
-        this.time_line = time_line;
-    }
 }

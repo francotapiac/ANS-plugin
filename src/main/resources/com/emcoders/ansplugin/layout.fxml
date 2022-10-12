@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<?import io.github.palexdev.materialfx.controls.MFXButton?>
+<Pane fx:id="root" prefHeight="240.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
+    <VBox alignment="CENTER_LEFT">
+
+
+        <children>
+            <Label text="Normas relativas" alignment="CENTER" style="-fx-font-weight: bold;"/>
+        </children>
+
+
+
+        <ButtonBar maxWidth="527.0">
+            <buttons>
+                <MFXButton fx:id="addEventBtn" text="Añadir evento" ButtonBar.buttonData="LEFT"/>
+                <MFXButton fx:id="addRelativeNorm" text="Generar Norma Relativa" ButtonBar.buttonData="RIGHT"/>
+            </buttons>
+        </ButtonBar>
+
+
+
+        <Label text="Patrones de voz" style="-fx-font-weight: bold;" alignment="CENTER"/>
+
+        <TableView style="-fx-margin-top:20px;" fx:id="voicePatternTable"  layoutX="35.0" layoutY="28.0" maxHeight="80.0" maxWidth="527.0">
+            <columns>
+                <TableColumn prefWidth="90.0" text="Mean Pitch" fx:id="vpMean" />
+                <TableColumn prefWidth="90.0" text="sd Pitch" fx:id="vpSd" />
+                <TableColumn prefWidth="90.0" text="min Pitch" fx:id="vpMin" />
+                <TableColumn prefWidth="90.0" text="max Pitch" fx:id="vpMax" />
+                <TableColumn prefWidth="90.0" text="ceiling Pitch" fx:id="vpMeanIntensity" />
+                <TableColumn prefWidth="90.0" text="floor Pitch" fx:id="vpFloor" />
+                <TableColumn prefWidth="90.0" text="ceiling Pitch" fx:id="vpCeiling" />
+            </columns>
+        </TableView>
+
+        <ButtonBar maxWidth="527.0">
+            <buttons>
+                <MFXButton fx:id="generatePatternBtn" text="Crear Patron" disable="true" ButtonBar.buttonData="LEFT"/>
+            </buttons>
+        </ButtonBar>
+
+        <Label text="Alertas Vocales" alignment="CENTER" style="-fx-font-weight: bold;"/>
+
+        <TableView fx:id="alertTable"  layoutX="35.0" layoutY="28.0" prefHeight="150.0" maxWidth="527.0">
+            <columns>
+                <TableColumn prefWidth="85.0" text="Event ID" fx:id="eventId" />
+                <TableColumn prefWidth="220.0" text="Pitch Alert" fx:id="pitchAlert" />
+                <TableColumn prefWidth="220.0" text="Intensity Alert" fx:id="intensityAlert" />
+            </columns>
+        </TableView>
+        <ButtonBar maxWidth="527.0">
+            <buttons>
+                <MFXButton fx:id="deleteNormBtn" text="Borrar normas" ButtonBar.buttonData="RIGHT"/>
+                <MFXButton fx:id="exportVocalBtn" text="Exportar Análisis" ButtonBar.buttonData="LEFT"/>
+            </buttons>
+        </ButtonBar>
+
+    </VBox>
+</Pane>
