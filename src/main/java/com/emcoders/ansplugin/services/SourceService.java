@@ -1,6 +1,6 @@
 package com.emcoders.ansplugin.services;
 
-import com.emcoders.ansplugin.SignalController;
+import com.emcoders.ansplugin.controllers.SignalController;
 import com.emcoders.scansembox.Events.AddSourceEvent;
 import com.emcoders.scansembox.Events.DeleteSourceEvent;
 import io.github.palexdev.materialfx.controls.MFXProgressBar;

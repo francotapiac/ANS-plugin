@@ -79,6 +79,13 @@
             <artifactId>opencv</artifactId>
             <version>4.3.0-0</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.openjfx/javafx-media -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>20-ea+4</version>
+        </dependency>
+
     </dependencies>
 
     <build>

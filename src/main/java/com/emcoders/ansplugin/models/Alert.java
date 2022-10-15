@@ -14,8 +14,11 @@ public class Alert extends CardiacCoherence{
         this.duration = calculate_duration(start_time, end_time);
     };
 
-    public Integer create_type_alert(float ratio_cohernece){
-        if(ratio_cohernece < 1.0)
+    /*
+    Calcula el tipo de alerta según el ratio de coherencia
+     */
+    public Integer create_type_alert(float ratio_coherence){
+        if(ratio_coherence < 1.0)
             return 1;
         return 0;
     }
@@ -65,4 +68,6 @@ public class Alert extends CardiacCoherence{
     public void setDuration(float duration) {
         this.duration = duration;
     }
+
+
 }

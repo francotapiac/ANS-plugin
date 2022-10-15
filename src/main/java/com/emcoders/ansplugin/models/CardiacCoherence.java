@@ -29,5 +29,59 @@ public class CardiacCoherence {
             return "Alta coherencia cardíaca";
     }
 
+    public String getId() {
+        return id;
+    }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public float getRatio_coherence() {
+        return ratio_coherence;
+    }
+
+    public void setRatio_coherence(float ratio_coherence) {
+        this.ratio_coherence = ratio_coherence;
+    }
+
+    public String getScale() {
+        return scale;
+    }
+
+    public void setScale(String scale) {
+        this.scale = scale;
+    }
+
+    public Emotion getEmotion() {
+        return emotion;
+    }
+
+    public void setEmotion(Emotion emotion) {
+        this.emotion = emotion;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public float getStart_time() {
+        return start_time;
+    }
+
+    public void setStart_time(float start_time) {
+        this.start_time = start_time;
+    }
+
+    public float getEnd_time() {
+        return end_time;
+    }
+
+    public void setEnd_time(float end_time) {
+        this.end_time = end_time;
+    }
 }

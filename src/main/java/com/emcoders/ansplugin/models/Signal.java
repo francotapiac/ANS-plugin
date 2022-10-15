@@ -8,23 +8,28 @@ import org.json.simple.parser.JSONParser;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Signal {
     private String id;
     private List<Double> points_signal = new ArrayList<>();
+    private List<Double> times = new ArrayList<>();
     private List<Pair<Alert,Feature>> time_line;
     private double end_time_signal;
 
+    //Atributos información general de la señal
+    private Integer count_alerts;
+    private List<String> emotions_signal;
+    private List<Integer> cant_emotions_signal;
+    private String predominant_emotion;
+
     public Signal(String path_api){
-        get_signal( System.getProperty("user.dir")  + "\\signals\\ecg.csv");
+        //get_signal( System.getProperty("user.dir")  + "\\signals\\ecg.csv");
         JSONArray dataObject = get_json_time_line(path_api);
-        this.time_line = create_time_line_signal(dataObject);
-        this.time_line = create_time_line_signal(dataObject);
-        this.end_time_signal = calculate_length_signal(time_line);
-        System.out.println(this.end_time_signal);
+        this.time_line = create_time_line_signal(dataObject);       // Creando línea de tiempo de la señal
+        this.end_time_signal = calculate_length_signal(time_line);  // Obteniendo tiempo final de la señal
+        create_signal_time(dataObject);                             //Creando arreglos con puntos de la señal y tiempo
+        get_general_data();                                         //Obteniendo datos generales de la señal
     }
 
     /*
@@ -105,8 +110,10 @@ public class Signal {
     */
     public List<Pair<Alert,Feature>> create_time_line_signal(JSONArray dataObject){
         List<Pair<Alert,Feature>> time_line = new ArrayList<>();
+        this.emotions_signal = new ArrayList<>();
+        this.cant_emotions_signal = new ArrayList<>();
 
-        for (int i =0; i < dataObject.size(); i++) {
+        for (int i =0; i < dataObject.size()-2; i++) {
 
             //Obteniendo datos de json
             JSONObject jsonObject = (JSONObject) dataObject.get(i);
@@ -121,6 +128,9 @@ public class Signal {
             Emotion emotion = new Emotion(name_emotion);
             Feature feature = new Feature(times_features, freq_features, start_time, end_time);
             Alert alert = new Alert(ratio_coherence, "", emotion, start_time, end_time);
+
+            //Contando cantidad de emociones y agregando a lista
+            append_emotions_signal(name_emotion);
 
             //Agregando características y alerta del segmento de la señla a la línea de tiempo
             Pair p = new Pair(alert, feature);
@@ -150,6 +160,58 @@ public class Signal {
         return length_signal;
     }
 
+    public void create_signal_time(JSONArray dataObject){
+
+        // Obteniendo objetos de señal y tiempos
+        JSONObject object_points_signal = (JSONObject) dataObject.get(dataObject.size() - 2);
+        JSONObject object_times = (JSONObject) dataObject.get(dataObject.size() - 1);
+
+        // Lista de string
+        String[] list_string_points_signal = object_points_signal.get("points_signal").toString().split(",");
+        String[] list_string_times = object_times.get("times").toString().split(",");
+
+        //Transformando a double cada elemento de cada arreglo
+        for(int i = 1; i < list_string_points_signal.length-1; i++){
+            this.points_signal.add(Double.parseDouble(list_string_points_signal[i]));
+            this.times.add(Double.parseDouble(list_string_times[i]));
+        }
+
+    }
+
+    /*
+    Agregando cantidad de emociones en señal
+     */
+    public void append_emotions_signal(String name_signal){
+        if(!this.emotions_signal.isEmpty() && this.emotions_signal.contains(name_signal)){
+            Integer index = this.emotions_signal.indexOf(name_signal);
+            this.cant_emotions_signal.set(index, this.cant_emotions_signal.get(index) + 1);
+        }
+        else {
+            this.emotions_signal.add(name_signal);
+            this.cant_emotions_signal.add(1);
+        }
+    }
+
+    /*
+    Obteniendo datos generales
+     */
+    public void get_general_data(){
+        this.count_alerts = 0;               // Cantidad de alertas
+        // Contando cantidad de alertas
+        for(int i = 0; i < this.time_line.size(); i++){
+            if(this.time_line.get(i).getKey().getType_alert() == 1){
+                this.count_alerts++;
+            }
+        }
+        // Obteniendo emoción predominante
+        for(int j = 0; j < this.emotions_signal.size(); j++){
+            Integer max_value = Collections.max(this.cant_emotions_signal);
+            Integer index = this.cant_emotions_signal.indexOf(max_value);
+            this.predominant_emotion = this.emotions_signal.get(index);
+        }
+    }
+
+
 
     /*
     Sección de Getter y Setter
@@ -163,5 +225,27 @@ public class Signal {
         this.id = id;
     }
 
+    public List<Double> getPoints_signal() {
+        return points_signal;
+    }
 
+    public List<Double> getTimes() {
+        return times;
+    }
+
+    public List<Pair<Alert, Feature>> getTime_line() {
+        return time_line;
+    }
+
+    public double getEnd_time_signal() {
+        return end_time_signal;
+    }
+
+    public Integer getCount_alerts() {
+        return count_alerts;
+    }
+
+    public String getPredominant_emotion() {
+        return predominant_emotion;
+    }
 }

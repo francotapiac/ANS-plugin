@@ -1,65 +1,93 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.layout.*?>
+<!--
+  Copyright (c) 2015, 2019, Gluon and/or its affiliates.
+  All rights reserved. Use is subject to license terms.
 
-<?import io.github.palexdev.materialfx.controls.MFXButton?>
-<Pane fx:id="root" prefHeight="240.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/16" xmlns:fx="http://javafx.com/fxml/1">
-    <VBox alignment="CENTER_LEFT">
+  This file is available and licensed under the following license:
 
+  Redistribution and use in source and binary forms, with or without
+  modification, are permitted provided that the following conditions
+  are met:
 
-        <children>
-            <Label text="Normas relativas" alignment="CENTER" style="-fx-font-weight: bold;"/>
-        </children>
+  - Redistributions of source code must retain the above copyright
+    notice, this list of conditions and the following disclaimer.
+  - Redistributions in binary form must reproduce the above copyright
+    notice, this list of conditions and the following disclaimer in
+    the documentation and/or other materials provided with the distribution.
+  - Neither the name of Oracle Corporation nor the names of its
+    contributors may be used to endorse or promote products derived
+    from this software without specific prior written permission.
 
+  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
 
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-        <ButtonBar maxWidth="527.0">
-            <buttons>
-                <MFXButton fx:id="addEventBtn" text="Añadir evento" ButtonBar.buttonData="LEFT"/>
-                <MFXButton fx:id="addRelativeNorm" text="Generar Norma Relativa" ButtonBar.buttonData="RIGHT"/>
-            </buttons>
-        </ButtonBar>
-
-
-
-        <Label text="Patrones de voz" style="-fx-font-weight: bold;" alignment="CENTER"/>
-
-        <TableView style="-fx-margin-top:20px;" fx:id="voicePatternTable"  layoutX="35.0" layoutY="28.0" maxHeight="80.0" maxWidth="527.0">
-            <columns>
-                <TableColumn prefWidth="90.0" text="Mean Pitch" fx:id="vpMean" />
-                <TableColumn prefWidth="90.0" text="sd Pitch" fx:id="vpSd" />
-                <TableColumn prefWidth="90.0" text="min Pitch" fx:id="vpMin" />
-                <TableColumn prefWidth="90.0" text="max Pitch" fx:id="vpMax" />
-                <TableColumn prefWidth="90.0" text="ceiling Pitch" fx:id="vpMeanIntensity" />
-                <TableColumn prefWidth="90.0" text="floor Pitch" fx:id="vpFloor" />
-                <TableColumn prefWidth="90.0" text="ceiling Pitch" fx:id="vpCeiling" />
-            </columns>
-        </TableView>
-
-        <ButtonBar maxWidth="527.0">
-            <buttons>
-                <MFXButton fx:id="generatePatternBtn" text="Crear Patron" disable="true" ButtonBar.buttonData="LEFT"/>
-            </buttons>
-        </ButtonBar>
-
-        <Label text="Alertas Vocales" alignment="CENTER" style="-fx-font-weight: bold;"/>
-
-        <TableView fx:id="alertTable"  layoutX="35.0" layoutY="28.0" prefHeight="150.0" maxWidth="527.0">
-            <columns>
-                <TableColumn prefWidth="85.0" text="Event ID" fx:id="eventId" />
-                <TableColumn prefWidth="220.0" text="Pitch Alert" fx:id="pitchAlert" />
-                <TableColumn prefWidth="220.0" text="Intensity Alert" fx:id="intensityAlert" />
-            </columns>
-        </TableView>
-        <ButtonBar maxWidth="527.0">
-            <buttons>
-                <MFXButton fx:id="deleteNormBtn" text="Borrar normas" ButtonBar.buttonData="RIGHT"/>
-                <MFXButton fx:id="exportVocalBtn" text="Exportar Análisis" ButtonBar.buttonData="LEFT"/>
-            </buttons>
-        </ButtonBar>
-
-    </VBox>
-</Pane>
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="708.0" prefWidth="1282.0" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
+   <top>
+      <HBox prefHeight="73.0" prefWidth="1282.0" BorderPane.alignment="CENTER">
+         <children>
+            <Label alignment="CENTER" prefHeight="71.0" prefWidth="239.0" text="Canal Psicofisiológico">
+               <font>
+                  <Font name="Verdana" size="20.0" />
+               </font>
+            </Label>
+         </children>
+      </HBox>
+   </top>
+   <center>
+      <VBox fx:id="central_box" prefHeight="200.0" prefWidth="100.0" BorderPane.alignment="CENTER">
+         <children>
+            <TitledPane animated="false" text="Descripción del análisis">
+              <content>
+                <AnchorPane fx:id="panel_description" minHeight="0.0" minWidth="0.0" prefHeight="177.0" prefWidth="1116.0">
+                     <children>
+                        <ImageView fitHeight="123.0" fitWidth="200.0" layoutX="500.0" pickOnBounds="true" preserveRatio="true" />
+                     </children></AnchorPane>
+              </content>
+            </TitledPane>
+            <TitledPane fx:id="panel_video" text="Vídeo">
+               <content>
+                  <ImageView fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true" />
+               </content></TitledPane>
+            <TitledPane fx:id="panel_chart" animated="false" text="Señal Cardíaca">
+              <content>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                     <children>
+                        <LineChart fx:id="signal_chart" layoutX="-2.0" prefHeight="182.0" prefWidth="1277.0" AnchorPane.leftAnchor="-11.599999999999909" AnchorPane.rightAnchor="5.0">
+                          <xAxis>
+                            <CategoryAxis side="BOTTOM" />
+                          </xAxis>
+                          <yAxis>
+                            <NumberAxis side="LEFT" />
+                          </yAxis>
+                        </LineChart>
+                     </children>
+                  </AnchorPane>
+              </content>
+            </TitledPane>
+         </children>
+      </VBox>
+   </center>
+</BorderPane>

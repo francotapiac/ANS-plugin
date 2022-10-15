@@ -1,13 +1,10 @@
 package com.emcoders.ansplugin;
 
 import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 
 public class HelloApplication extends Application {
     @Override
@@ -34,7 +31,7 @@ public class HelloApplication extends Application {
         catch (Exception e){
             e.printStackTrace();
         }*/
-        MainController2 mainController = new MainController2();
+        ANSController mainController = new ANSController();
         Scene scene = new Scene(mainController.getLayout(), 320, 240);
         stage.setTitle("Hello!");
         stage.setScene(scene);
