@@ -257,7 +257,7 @@ path_model = sys.argv[4]
 points_signal = get_signal(path)
 name_signal = get_name_signal(type_signal)
 t,filtered_signal,rr_peaks = get_rpeaks(points_signal, type_signal, sampling)
-signal_segment, t_segment = create_windows_signal(filtered_signal,t,12,2000)
+signal_segment, t_segment = create_windows_signal(filtered_signal,t,12,0.5)
 time_line = process_signal(signal_segment, t_segment,type_signal, sampling)
 
 print(time_line)

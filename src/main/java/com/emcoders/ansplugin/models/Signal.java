@@ -8,6 +8,7 @@ import org.json.simple.parser.JSONParser;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.text.DecimalFormat;
 import java.util.*;
 
 public class Signal {
@@ -15,6 +16,7 @@ public class Signal {
     private List<Double> points_signal = new ArrayList<>();
     private List<Double> times = new ArrayList<>();
     private List<Pair<Alert,Feature>> time_line;
+    private double start_time_signal;
     private double end_time_signal;
 
     //Atributos información general de la señal
@@ -27,7 +29,7 @@ public class Signal {
         //get_signal( System.getProperty("user.dir")  + "\\signals\\ecg.csv");
         JSONArray dataObject = get_json_time_line(path_api);
         this.time_line = create_time_line_signal(dataObject);       // Creando línea de tiempo de la señal
-        this.end_time_signal = calculate_length_signal(time_line);  // Obteniendo tiempo final de la señal
+        calculate_length_signal(time_line);                             // Obteniendo tiempo final de la señal
         create_signal_time(dataObject);                             //Creando arreglos con puntos de la señal y tiempo
         get_general_data();                                         //Obteniendo datos generales de la señal
     }
@@ -113,13 +115,13 @@ public class Signal {
         this.emotions_signal = new ArrayList<>();
         this.cant_emotions_signal = new ArrayList<>();
 
-        for (int i =0; i < dataObject.size()-2; i++) {
+        for (int i =0; i < dataObject.size()-3; i++) {
 
             //Obteniendo datos de json
             JSONObject jsonObject = (JSONObject) dataObject.get(i);
-            float start_time = Float.parseFloat(jsonObject.get("start_time").toString());
-            float end_time = Float.parseFloat(jsonObject.get("end_time").toString());
-            String name_emotion = jsonObject.get("emotion").toString();
+            float start_time = format_number(Float.parseFloat(jsonObject.get("start_time").toString()));
+            float end_time = format_number(Float.parseFloat(jsonObject.get("end_time").toString()));
+            String name_emotion = set_predominant_emotion_name(jsonObject.get("emotion").toString());
             float ratio_coherence = Float.parseFloat(jsonObject.get("ratio_coherence").toString());
             List<Pair<String, Float>> times_features = json_object_to_pair_float(jsonObject.get("time_df"));
             List<Pair<String, Float>> freq_features = json_object_to_pair_float(jsonObject.get("freq_df"));
@@ -155,9 +157,10 @@ public class Signal {
         return list_pairs;
     }
 
-    public double calculate_length_signal(List<Pair<Alert,Feature>> time_line){
-        double length_signal = time_line.get(time_line.size()-1).getValue().getEnd_time();
-        return length_signal;
+    public void calculate_length_signal(List<Pair<Alert,Feature>> time_line){
+
+        this.start_time_signal = format_number(time_line.get(0).getValue().getStart_time());
+        this.end_time_signal = format_number(time_line.get(time_line.size()-1).getValue().getEnd_time());
     }
 
     public void create_signal_time(JSONArray dataObject){
@@ -204,11 +207,31 @@ public class Signal {
             }
         }
         // Obteniendo emoción predominante
-        for(int j = 0; j < this.emotions_signal.size(); j++){
-            Integer max_value = Collections.max(this.cant_emotions_signal);
-            Integer index = this.cant_emotions_signal.indexOf(max_value);
-            this.predominant_emotion = this.emotions_signal.get(index);
+        Integer max_value = Collections.max(this.cant_emotions_signal);
+        Integer index = this.cant_emotions_signal.indexOf(max_value);
+        this.predominant_emotion = set_predominant_emotion_name(this.emotions_signal.get(index));
+
+
+    }
+
+    public String set_predominant_emotion_name(String emotion_name){
+        if(emotion_name.equals("surprise"))
+            return "Sorpresa";
+        else if (emotion_name.equals("happiness")) {
+            return "Felicidad";
+
         }
+        return "";
+
+    }
+
+    // Entrega un número con formato .0000
+    public Float format_number(Float number){
+        DecimalFormat numeroFormateado = new DecimalFormat("#.0000");
+        String textoFormateado = numeroFormateado.format(number);
+        String[] list_number = textoFormateado.split(",");
+        String new_number = list_number[0] + "." + list_number[1];
+        return Float.parseFloat(new_number);
     }
 
 
@@ -247,5 +270,9 @@ public class Signal {
 
     public String getPredominant_emotion() {
         return predominant_emotion;
+    }
+
+    public double getStart_time_signal() {
+        return start_time_signal;
     }
 }

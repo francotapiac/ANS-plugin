@@ -6,6 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.VBox;
 
+import java.text.DecimalFormat;
 import java.util.List;
 
 
@@ -90,12 +91,10 @@ public class LayoutController extends VBox {
             //Obteniendo puntos de la señal y tiempos
             List<Double> points_signal = signalController.get_pointsSignal();
             List<Double> times = signalController.get_times();
-            System.out.println(points_signal.size());
-            System.out.println(times.size());
             for(int i = 0; i < points_signal.size(); i++){
                 Number x = times.get(i);
                 Number y = points_signal.get(i);
-                series.getData().add(new XYChart.Data(x.toString(),y));
+                series.getData().add(new XYChart.Data(format_number(x),y));
             }
             //this.signal_chart.getData().addAll(series);
 
@@ -111,6 +110,13 @@ public class LayoutController extends VBox {
 
     }
 
+    public String format_number(Number number){
+        DecimalFormat numeroFormateado = new DecimalFormat("#.0000");
+        String textoFormateado = numeroFormateado.format(number);
+        String[] list_number = textoFormateado.split(",");
+        String new_number = list_number[0] + "." + list_number[1];
+        return new_number;
+    }
     public TitledPane getPanel_description() {
         return panel_description;
     }

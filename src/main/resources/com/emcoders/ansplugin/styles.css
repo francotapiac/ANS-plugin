@@ -7,9 +7,15 @@
 }
 
 .container{
-	-fx-background-color: rgba(255,255,255,0.7);
+	-fx-background-color: rgba(255,255,255,1);
 	-fx-background-radius: 20;
 }
+
+.container-button{
+	-fx-background-color: rgba(216, 215, 246,1);
+	-fx-background-radius: 30;
+}
+
 
 
 

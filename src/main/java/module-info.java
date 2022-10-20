@@ -8,10 +8,12 @@ module com.emcoders.ansplugin {
     requires org.json;
     requires opencv;
     requires javafx.media;
+    requires com.jfoenix;
 
 
     opens com.emcoders.ansplugin to javafx.fxml;
     exports com.emcoders.ansplugin;
     exports com.emcoders.ansplugin.controllers;
+    exports com.emcoders.ansplugin.models;
     opens com.emcoders.ansplugin.controllers to javafx.fxml;
 }

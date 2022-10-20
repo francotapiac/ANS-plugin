@@ -3,6 +3,7 @@ package com.emcoders.ansplugin.models;
 public class Alert extends CardiacCoherence{
 
     private String id = "";
+    private String text_alert;
     private Integer type_alert;
     private String name_alert;
     private float duration;
@@ -12,6 +13,7 @@ public class Alert extends CardiacCoherence{
         this.type_alert = create_type_alert(ratio_coherence);
         this.name_alert = create_name_alert(this.type_alert);
         this.duration = calculate_duration(start_time, end_time);
+        this.text_alert = create_alert(ratio_coherence);
     };
 
     /*
@@ -21,6 +23,12 @@ public class Alert extends CardiacCoherence{
         if(ratio_coherence < 1.0)
             return 1;
         return 0;
+    }
+
+    public String create_alert(float ratio_coherence){
+        if(ratio_coherence < 1.0)
+            return "Alerta";
+        return "";
     }
 
     public String create_name_alert(Integer type_alert){
@@ -69,5 +77,11 @@ public class Alert extends CardiacCoherence{
         this.duration = duration;
     }
 
+    public String getText_alert() {
+        return text_alert;
+    }
 
+    public void setText_alert(String text_alert) {
+        this.text_alert = text_alert;
+    }
 }
