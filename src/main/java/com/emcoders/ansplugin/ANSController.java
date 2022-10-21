@@ -14,6 +14,7 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
@@ -48,6 +49,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 
@@ -138,6 +140,11 @@ public class ANSController extends CanalModel {
 
     Double millis;
     TimelineElement timelineElement;
+    String alert_task;
+    String emotion_task;
+    String cardiac_coherence_task;
+    String initial_time_task;
+    String final_time_task;
 
 
     // Instance state //
@@ -223,26 +230,30 @@ public class ANSController extends CanalModel {
         return false;
     }
 
-   // Abre el archivo
+
     public TimelineElement openSource(String path) {
-        new Thread(() -> {
-            signalController = new SignalController("http://127.0.0.1:5000/heart");
+        // Instanciando controlador de señal
+        signalController = new SignalController("http://127.0.0.1:5000/heart");
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                //update application thread
+                openSourceThread(path);
+            }
+        });
 
-            //DO SOMETHING WITH CONTROLLS ON FX THREAD ACCORDING RESULT OF OVER
-            Platform.runLater(() -> {
-                this.timelineElement = openSourceThread(path);
-            });
-        }).start();
-
+        //Párametros de la línea de tiempo
+        Double sourceLength = signalController.get_sourceLength();
+        timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
 
         return this.timelineElement;
 
 
     }
 
-    public TimelineElement openSourceThread(String path){
+    public void openSourceThread(String path){
         //*********************** Gráfico ***********************
-        // Instanciando controlador de señal
+
 
 
         //Seteando layout principal (componente señal de VBox) con la señal leída
@@ -286,11 +297,8 @@ public class ANSController extends CanalModel {
         create_table_detail();
 
 
-        //Párametros de la línea de tiempo
-        Double sourceLength = signalController.get_sourceLength();
 
-         this.timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
-         return timelineElement;
+
     }
 
     public TimelineElement loadProjectSource(String path) {
@@ -340,8 +348,32 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonResource(ActionEvent event) {
-        this.openSource("");
+        Service<Void> service = new Service<Void>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<Void>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        openSource("");
+                        final CountDownLatch latch = new CountDownLatch(1);
 
+                        Platform.runLater(new Runnable() {
+                                              @Override
+                                              public void run() {
+                                                  Double p = (Double)timelineElement.getSourceLength();
+                                                  emotion.setText(p.toString());
+                                              }
+                                          });
+
+                        latch.await();
+                        //Keep with the background work
+                        return null;
+                    }
+                };
+            }
+
+        };
+        service.start();
     }
 
 
@@ -351,8 +383,31 @@ public class ANSController extends CanalModel {
         this.btn_study_segment.setButtonType(JFXButton.ButtonType.FLAT);
         this.btn_study_signal.setStyle("-fx-background-color:  #d8d7f6");
         this.btn_study_signal.setButtonType(JFXButton.ButtonType.RAISED);
-        set_data_abstact(millis);
+        signalController.get_particular_data(millis);
+        alert_task = signalController.getCardiac_coherence_description();
+        emotion_task = signalController.getEmotion();
+        cardiac_coherence_task = signalController.getRatio_coherence().toString();
+        initial_time_task = signalController.getPartial_start_time().toString();
+        final_time_task = signalController.getPartial_end_time().toString();
+        Service<Void> service = new Service<Void>() {
+            @Override
+            protected Task<Void> createTask() {
+                return new Task<Void>() {
+                    @Override
+                    protected Void call() throws Exception {
+                        set_data_abstact(millis);
+                        System.out.println("aaaaaaaaaaaaaaaaaaaaa");
+                        System.out.println(alert_task);
+                        final CountDownLatch latch = new CountDownLatch(1);
+                        latch.await();
+                        //Keep with the background work
+                        return null;
+                    }
+                };
+            }
 
+        };
+        service.start();
     }
 
     @FXML
@@ -405,15 +460,20 @@ public class ANSController extends CanalModel {
     }
 
     public void set_data_abstact(double millis){
-        this.signalController.get_particular_data(millis);
-        Platform.runLater( () -> {
 
-            this.alert.setText("Coherencia Cardíaca: " + this.signalController.getCardiac_coherence_description());
-            this.emotion.setText("Emoción: " + this.signalController.getEmotion());
-            this.cardiac_coherence.setText("Valor cardíaco: " + this.signalController.getRatio_coherence().toString());
-            this.initial_time_detail.setText("Tiempo inicial: " + this.signalController.getPartial_start_time().toString());
-            this.final_time.setText("Tiempo final: " + this.signalController.getPartial_end_time().toString());
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                //update application thread
+                alert.setText("Coherencia Cardíaca: " + alert_task );
+                emotion.setText("Emoción: " + emotion_task);
+                cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
+                initial_time_detail.setText("Tiempo inicial: " + initial_time_task);
+                final_time.setText("Tiempo final: " +  final_time_task);
+
+            }
         });
+
     }
 
 
