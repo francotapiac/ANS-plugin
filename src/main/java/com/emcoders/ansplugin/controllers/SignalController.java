@@ -4,6 +4,7 @@ import com.emcoders.ansplugin.models.Alert;
 import com.emcoders.ansplugin.models.Signal;
 import com.emcoders.scansembox.Utils.TimelineTag;
 import javafx.concurrent.Task;
+import org.freedesktop.gstreamer.Element;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +18,7 @@ public class SignalController {
     Float partial_start_time;
     Float partial_end_time;
     String cardiac_coherence_description;
+
 
     public SignalController(String path){
 
@@ -36,18 +38,20 @@ public class SignalController {
     }
 
 
-    public void get_particular_data(Double time){
-        Float time_comparate = Float.parseFloat(time.toString());
+    public void get_particular_data(Float time_comparate){
+        System.out.println(time_comparate);
         for(int i = 0; i < signal.getTime_line().size(); i++){
-            Float parcial_start_time = signal.getTime_line().get(i).getKey().getStart_time();
-            Float parcial_end_time = signal.getTime_line().get(i).getKey().getEnd_time();
+            System.out.println(i);
+            Float parcial_start_time = signal.getTime_line().get(i).getKey().getStart_time()*1000;
+            Float parcial_end_time = signal.getTime_line().get(i).getKey().getEnd_time()*1000;
             if(time_comparate >= parcial_start_time && time_comparate < parcial_end_time){
                 this.partial_start_time = parcial_start_time;
                 this.partial_end_time = parcial_end_time;
-                ratio_coherence = signal.getTime_line().get(i).getKey().getRatio_coherence();
-                emotion = signal.getTime_line().get(i).getKey().getEmotion().getName();
-                type_alert = signal.getTime_line().get(i).getKey().getType_alert();
+                this.ratio_coherence = signal.getTime_line().get(i).getKey().getRatio_coherence();
+                this.emotion = signal.getTime_line().get(i).getKey().getEmotion().getName();
+                this.type_alert = signal.getTime_line().get(i).getKey().getType_alert();
                 this.cardiac_coherence_description = signal.getTime_line().get(i).getKey().getDescription();
+                break;
             }
         }
     }

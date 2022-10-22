@@ -138,7 +138,7 @@ public class ANSController extends CanalModel {
     LayoutController layoutController;
     VideoController videoController;
 
-    Double millis;
+    Float millis;
     TimelineElement timelineElement;
     String alert_task;
     String emotion_task;
@@ -189,7 +189,6 @@ public class ANSController extends CanalModel {
 
         this.pane_principal.toFront();
 
-        this.millis = 0.0;
 
         //seek(13.6);
 
@@ -213,9 +212,21 @@ public class ANSController extends CanalModel {
     }
 
     public void seek(double millis) {
-        if(this.signalController != null){
-            this.millis = millis;
-        }
+        this.millis = format_number(millis);
+        signalController.get_particular_data(format_number(millis));
+        alert_task = signalController.getCardiac_coherence_description();
+        emotion_task = signalController.getEmotion();
+        cardiac_coherence_task = signalController.getRatio_coherence().toString();
+        initial_time_task = signalController.getPartial_start_time().toString();
+        System.out.println("Tiempo Inicial: " + initial_time_task);
+        final_time_task = signalController.getPartial_end_time().toString();
+
+
+        Platform.runLater(() -> set_data_abstact(millis));
+
+
+
+        //System.out.println(millis);
 
     }
 
@@ -358,12 +369,12 @@ public class ANSController extends CanalModel {
                         final CountDownLatch latch = new CountDownLatch(1);
 
                         Platform.runLater(new Runnable() {
-                                              @Override
-                                              public void run() {
-                                                  Double p = (Double)timelineElement.getSourceLength();
-                                                  emotion.setText(p.toString());
-                                              }
-                                          });
+                              @Override
+                              public void run() {
+                                  Double p = (Double)timelineElement.getSourceLength();
+                                  emotion.setText(p.toString());
+                              }
+                          });
 
                         latch.await();
                         //Keep with the background work
@@ -379,26 +390,37 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonSegment(ActionEvent event) {
+        //seek(12.53918);
         this.btn_study_segment.setStyle("-fx-background-color: #F0F0F6");
         this.btn_study_segment.setButtonType(JFXButton.ButtonType.FLAT);
         this.btn_study_signal.setStyle("-fx-background-color:  #d8d7f6");
         this.btn_study_signal.setButtonType(JFXButton.ButtonType.RAISED);
-        signalController.get_particular_data(millis);
-        alert_task = signalController.getCardiac_coherence_description();
-        emotion_task = signalController.getEmotion();
-        cardiac_coherence_task = signalController.getRatio_coherence().toString();
-        initial_time_task = signalController.getPartial_start_time().toString();
-        final_time_task = signalController.getPartial_end_time().toString();
+        System.out.print("Millis: ");
+        System.out.println(millis);
+
+
         Service<Void> service = new Service<Void>() {
             @Override
             protected Task<Void> createTask() {
                 return new Task<Void>() {
                     @Override
                     protected Void call() throws Exception {
-                        set_data_abstact(millis);
-                        System.out.println("aaaaaaaaaaaaaaaaaaaaa");
-                        System.out.println(alert_task);
+                        signalController.get_particular_data(millis);
+                        alert_task = signalController.getCardiac_coherence_description();
+                        emotion_task = signalController.getEmotion();
+                        cardiac_coherence_task = signalController.getRatio_coherence().toString();
+                        initial_time_task = signalController.getPartial_start_time().toString();
+                        final_time_task = signalController.getPartial_end_time().toString();
                         final CountDownLatch latch = new CountDownLatch(1);
+                        System.out.println("T2: " + System.currentTimeMillis());
+
+                        Platform.runLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                set_data_abstact(millis);
+                            }
+                        });
+
                         latch.await();
                         //Keep with the background work
                         return null;
@@ -408,6 +430,9 @@ public class ANSController extends CanalModel {
 
         };
         service.start();
+
+
+
     }
 
     @FXML
@@ -461,18 +486,11 @@ public class ANSController extends CanalModel {
 
     public void set_data_abstact(double millis){
 
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                //update application thread
-                alert.setText("Coherencia Cardíaca: " + alert_task );
-                emotion.setText("Emoción: " + emotion_task);
-                cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
-                initial_time_detail.setText("Tiempo inicial: " + initial_time_task);
-                final_time.setText("Tiempo final: " +  final_time_task);
-
-            }
-        });
+        alert.setText("Coherencia Cardíaca: " + alert_task );
+        emotion.setText("Emoción: " + emotion_task);
+        cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
+        initial_time.setText("Tiempo inicial: " + initial_time_task);
+        final_time.setText("Tiempo final: " +  final_time_task);
 
     }
 
