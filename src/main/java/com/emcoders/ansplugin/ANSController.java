@@ -1,17 +1,22 @@
 package com.emcoders.ansplugin;
 
+import com.emcoders.ansplugin.components.TagDialog;
 import com.emcoders.ansplugin.controllers.AlertController;
 import com.emcoders.ansplugin.controllers.LayoutController;
 import com.emcoders.ansplugin.controllers.SignalController;
 import com.emcoders.ansplugin.controllers.VideoController;
 import com.emcoders.ansplugin.models.SegmentSignal;
 import com.emcoders.ansplugin.models.Signal;
+import com.emcoders.scansembox.Events.AddTagEvent;
+import com.emcoders.scansembox.Events.UpdateTagEvent;
 import com.emcoders.scansembox.Models.CanalModel;
 import com.emcoders.scansembox.Utils.TimelineElement;
 import com.emcoders.scansembox.Utils.TimelineTag;
 import javafx.animation.KeyFrame;
+import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
@@ -49,6 +54,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
@@ -125,13 +131,15 @@ public class ANSController extends CanalModel {
     @FXML
     private JFXButton btn_study_signal;
 
-
+    @FXML
+    TagDialog tagDialog;
 
     // Atributos
     private final ArrayList<TimelineTag> tags = new ArrayList<>();
     private ExecutorService backgroundWorkers;
 
     private String path_video = "";
+    private String path_signal = "";
 
     // Controladores
     SignalController signalController;
@@ -145,6 +153,8 @@ public class ANSController extends CanalModel {
     String cardiac_coherence_task;
     String initial_time_task;
     String final_time_task;
+
+    private ArrayList<BooleanProperty> tagsSelected = new ArrayList<>();
 
 
     // Instance state //
@@ -245,11 +255,13 @@ public class ANSController extends CanalModel {
     public TimelineElement openSource(String path) {
         // Instanciando controlador de señal
         signalController = new SignalController("http://127.0.0.1:5000/heart");
+        this.path_signal = path;
         Platform.runLater(new Runnable() {
             @Override
             public void run() {
                 //update application thread
                 openSourceThread(path);
+                addEventTag();
             }
         });
 
@@ -271,14 +283,7 @@ public class ANSController extends CanalModel {
         layoutController = new LayoutController();
         layoutController.initialize_panes(signalController);
 
-        //Inicializando gráfico
-        this.chart.getData().addAll(layoutController.getSeries());
 
-        //Modificando atributos de gráfico
-        this.chart.lookup(".chart-plot-background").setStyle("-fx-background-color: transparent;");
-        this.chart.setTitle("Frecuencia Cardíaca Instantánea en el Tiempo");
-        this.chart.getXAxis().setLabel("Tiempo (s)");
-        this.chart.getYAxis().setLabel("Frecuencia Cardíaca Instantánea");
 
 
         //*********************** Emoción de señal ***********************
@@ -305,6 +310,16 @@ public class ANSController extends CanalModel {
             this.media.setMediaPlayer(media);
         }
         //*********************** Tabla de detalles ***********************
+
+        //Inicializando gráfico
+        this.chart.getData().addAll(layoutController.getSeries());
+
+        //Modificando atributos de gráfico
+        this.chart.lookup(".chart-plot-background").setStyle("-fx-background-color: transparent;");
+        this.chart.setTitle("Frecuencia Cardíaca Instantánea en el Tiempo");
+        this.chart.getXAxis().setLabel("Tiempo (s)");
+        this.chart.getYAxis().setLabel("Frecuencia Cardíaca Instantánea");
+
         create_table_detail();
 
 
@@ -316,21 +331,76 @@ public class ANSController extends CanalModel {
         return null;
     }
 
-    public ExecutorService getBackgroundWorkers() {
-        return backgroundWorkers;
-    }
-
-    public void setBackgroundWorkers(ExecutorService backgroundWorkers) {
-        this.backgroundWorkers = backgroundWorkers;
-    }
-
     public void loadProjectTag(String source, String code, String desc, double initTimeInMS, double lengthInMS) {
+        Color color;
+        if(Objects.equals(code, "Evento")){
+            color = Color.RED;
+        }else{
+            color = Color.TEAL;
+        }
+        TimelineTag timelineTag = new TimelineTag(this.timelineElement.getWidth() * initTimeInMS / (signalController.getSignal().getEnd_time_signal()*1000),
+                this.timelineElement.getWidth() * lengthInMS / (signalController.getSignal().getEnd_time_signal()*1000),
+                code,
+                desc,
+                initTimeInMS,
+                lengthInMS,
+                color,
+                this.getName(),
+                source);
+        this.timelineElement.getChildren().add(timelineTag);
+        this.getTags().add(timelineTag);
+        this.tagsSelected.add(timelineTag.selectedProperty());
+        this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
+                (observable, oldValue, newValue) -> {
+                   // processingBtn.setDisable(newValue);
+                    //exportDetailsBtn.setDisable(true);
+                    //checkTagBtn.setDisable(!newValue);
+                    //addTagBtn.setDisable(newValue);
+                }
+        );
     }
 
     public void requestUpdate(String source, String code, String desc, double initTimeInMS, double lengthInMS) {
+        TimelineTag tagToUpdate = null;
+        for (TimelineTag t : this.getTags()) {
+            if(
+                    Objects.equals(source, t.getSource()) &&
+                            initTimeInMS == t.getInitTimeInMS() &&
+                            lengthInMS == t.getLengthInMS()
+            ){
+                tagToUpdate = t;
+                break;
+            }
+        }
+
+        if (tagToUpdate == null) return;
+        this.tagDialog.setCodeText(tagToUpdate.getCode());
+        this.tagDialog.setDescText(tagToUpdate.getDescription());
+        this.tagDialog.showAndWait();
+
+        if (!this.tagDialog.isCompleted()) return;
+
+        TimelineTag finalTagToUpdate = tagToUpdate;
+
     }
 
     public void deleteTag(String source, String code, String desc, double initTimeInMS, double lengthInMS) {
+        TimelineTag tagToDelete = null;
+        for(TimelineTag t : this.getTags()){
+            if(
+                    Objects.equals(source, t.getSource()) &&
+                            initTimeInMS == t.getInitTimeInMS() &&
+                            lengthInMS == t.getLengthInMS()
+            ){
+                tagToDelete = t;
+                break;
+            }
+        }
+        if(tagToDelete == null) return;
+        this.getTags().remove(tagToDelete);
+        this.timelineElement.getChildren().remove(tagToDelete);
+        // Remove timelineTag selected property
+        this.tagsSelected.remove(this.tagsSelected.indexOf(tagToDelete.selectedProperty()));
     }
 
     public void shutdown() {
@@ -494,7 +564,39 @@ public class ANSController extends CanalModel {
 
     }
 
+    private void addEventTag(){
+        for(Integer i = 1; i < signalController.getSignal().getTime_line().size(); i++) {
+            if (signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence() < 1) {
+                double partial_initial_time = signalController.getSignal().getTime_line().get(i).getKey().getStart_time();
+                double partial_final_time = signalController.getSignal().getTime_line().get(i).getKey().getEnd_time();
+                double partial_ratio_coherence = signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence();
+                Color color;
+                if (partial_ratio_coherence <= 0.5)
+                    color = Color.RED;
+                else color = Color.ORANGE;
 
+                TimelineTag timelineTag = new TimelineTag(
+                        this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
+                        this.timelineElement.getRectangle().getWidth() * partial_final_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000) - this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
+                        "Evento " + i.toString(),
+                        "Coherencia Cardíaca de " + partial_ratio_coherence,
+                        partial_initial_time * 1000,
+                        partial_final_time * 1000 - partial_initial_time * 1000,
+                        color,
+                        this.getName(),
+                        "source");
+                this.timelineElement.getChildren().add(timelineTag);
+                this.getTags().add(timelineTag);
+                root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTag.getCode(),
+                        timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS()));
+            }
+        }
+
+
+
+
+
+    }
 
 
 

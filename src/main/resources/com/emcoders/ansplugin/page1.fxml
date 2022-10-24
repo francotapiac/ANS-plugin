@@ -102,7 +102,7 @@
                   <Cursor fx:constant="HAND" />
                </cursor>
             </JFXButton>
-            <JFXButton fx:id="alert_btn" onAction="#handleButtonAlert" prefHeight="63.0" prefWidth="207.0" text="Alertas">
+            <JFXButton fx:id="alert_btn" onAction="#handleButtonAlert" prefHeight="63.0" prefWidth="207.0" text="Detalle">
                <font>
                   <Font name="Arial Rounded MT Bold" size="16.0" />
                </font>
@@ -262,7 +262,7 @@
                   </VBox>
                   <HBox alignment="CENTER" prefHeight="42.0" prefWidth="825.0" stylesheets="@styles.css">
                      <children>
-                        <JFXButton fx:id="btn_study_signal" onAction="#handleButtonSignal" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: F0F0F6; -fx-background-radius: 30;" text="Análisis Completo">
+                        <JFXButton fx:id="btn_study_signal" buttonType="RAISED" onAction="#handleButtonSignal" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Análisis Completo">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>
@@ -272,20 +272,6 @@
                            <font>
                               <Font name="Arial Rounded MT Bold" size="12.0" />
                            </font>
-                        </JFXButton>
-                        <JFXButton fx:id="btn_study_segment" buttonType="RAISED" onAction="#handleButtonSegment" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Análisis segmento">
-                           <opaqueInsets>
-                              <Insets />
-                           </opaqueInsets>
-                           <cursor>
-                              <Cursor fx:constant="HAND" />
-                           </cursor>
-                           <font>
-                              <Font name="Arial Rounded MT Bold" size="12.0" />
-                           </font>
-                           <HBox.margin>
-                              <Insets left="10.0" right="10.0" />
-                           </HBox.margin>
                         </JFXButton>
                      </children>
                      <VBox.margin>
@@ -305,7 +291,7 @@
                <children>
                   <HBox prefHeight="110.0" prefWidth="821.0">
                      <children>
-                        <Label alignment="CENTER" prefHeight="43.0" prefWidth="272.0" text="Detalle del Análisis">
+                        <Label alignment="CENTER" prefHeight="43.0" prefWidth="272.0" text="Análisis Detallado">
                            <font>
                               <Font name="Arial Rounded MT Bold" size="19.0" />
                            </font>
@@ -315,7 +301,7 @@
                   </HBox>
                   <ScrollPane fx:id="scroll_detail" prefHeight="555.0" prefWidth="821.0">
                      <content>
-                        <TableView fx:id="table_detail" prefHeight="510.0" prefWidth="805.0">
+                        <TableView fx:id="table_detail" prefHeight="510.0" prefWidth="819.0">
                            <columns>
                               <TableColumn fx:id="segment_detail" prefWidth="75.0" text="Segmento" />
                               <TableColumn fx:id="initial_time_detail" prefWidth="129.0" text="Tiempo Inicial (s)" />

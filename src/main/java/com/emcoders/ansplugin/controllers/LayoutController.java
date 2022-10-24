@@ -1,5 +1,6 @@
 package com.emcoders.ansplugin.controllers;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
@@ -94,7 +95,15 @@ public class LayoutController extends VBox {
             for(int i = 0; i < points_signal.size(); i++){
                 Number x = times.get(i);
                 Number y = points_signal.get(i);
-                series.getData().add(new XYChart.Data(format_number(x),y));
+                String new_format_number = format_number(x);
+                Platform.runLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        //update application thread
+                        series.getData().add(new XYChart.Data(new_format_number,y));
+                    }
+                });
+
             }
             //this.signal_chart.getData().addAll(series);
 
