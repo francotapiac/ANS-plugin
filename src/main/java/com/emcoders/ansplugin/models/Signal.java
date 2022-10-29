@@ -13,8 +13,11 @@ import java.util.*;
 
 public class Signal {
     private String id;
-    private List<Double> points_signal = new ArrayList<>();
-    private List<Double> times = new ArrayList<>();
+    private List<Double> fci = new ArrayList<>();
+    private List<Double> rr_peaks = new ArrayList<>();
+    private List<Double> times_fci = new ArrayList<>();
+    private List<Double> signal_points = new ArrayList<>();
+    private List<Double> times_points = new ArrayList<>();
     private List<Pair<Alert,Feature>> time_line;
     private double start_time_signal;
     private double end_time_signal;
@@ -25,13 +28,18 @@ public class Signal {
     private List<Integer> cant_emotions_signal;
     private String predominant_emotion;
 
+    private String emotion_image_path;
+
     public Signal(String path_api){
         //get_signal( System.getProperty("user.dir")  + "\\signals\\ecg.csv");
         JSONArray dataObject = get_json_time_line(path_api);
         this.time_line = create_time_line_signal(dataObject);       // Creando línea de tiempo de la señal
+        System.out.println("1");
         calculate_length_signal(time_line);                             // Obteniendo tiempo final de la señal
         create_signal_time(dataObject);                             //Creando arreglos con puntos de la señal y tiempo
+        System.out.println("2");
         get_general_data();                                         //Obteniendo datos generales de la señal
+        System.out.println("3");
     }
 
     /*
@@ -46,7 +54,7 @@ public class Signal {
             int contador = 0;
             while (myReader.hasNextLine()) {
                 if(contador != 0){
-                    this.points_signal.add(Double.parseDouble(myReader.nextLine().split(";")[1]));
+                    this.fci.add(Double.parseDouble(myReader.nextLine().split(";")[1]));
                 }
                 else{
                     contador++;
@@ -71,8 +79,8 @@ public class Signal {
 
         try {
             URL url = new URL(URL_API);
-
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            URL test = new URL("http://127.0.0.1:5000/");
+            HttpURLConnection conn = (HttpURLConnection) test.openConnection();
             conn.setRequestMethod("GET");
             conn.connect();
 
@@ -115,7 +123,7 @@ public class Signal {
         this.emotions_signal = new ArrayList<>();
         this.cant_emotions_signal = new ArrayList<>();
 
-        for (int i =0; i < dataObject.size()-3; i++) {
+        for (int i =0; i < dataObject.size()-6; i++) {
 
             //Obteniendo datos de json
             JSONObject jsonObject = (JSONObject) dataObject.get(i);
@@ -166,19 +174,27 @@ public class Signal {
     public void create_signal_time(JSONArray dataObject){
 
         // Obteniendo objetos de señal y tiempos
-        JSONObject object_points_signal = (JSONObject) dataObject.get(dataObject.size() - 2);
-        JSONObject object_times = (JSONObject) dataObject.get(dataObject.size() - 1);
+        JSONObject object_points_signal = (JSONObject) dataObject.get(dataObject.size() - 5);
+        JSONObject object_times = (JSONObject) dataObject.get(dataObject.size() - 4);
+        JSONObject object_rr_peaks = (JSONObject) dataObject.get(dataObject.size() - 3);
+        JSONObject object_signal_points = (JSONObject) dataObject.get(dataObject.size() - 2);
+        JSONObject object_times_points = (JSONObject) dataObject.get(dataObject.size() - 1);
 
         // Lista de string
-        String[] list_string_points_signal = object_points_signal.get("points_signal").toString().split(",");
-        String[] list_string_times = object_times.get("times").toString().split(",");
+        String[] list_string_points_signal = object_points_signal.get("fci").toString().split(",");
+        String[] list_string_times = object_times.get("times_fci").toString().split(",");
+        String[] list_rr_peaks = object_rr_peaks.get("rr").toString().split(",");
+        String[] list_signal_points = object_signal_points.get("signal").toString().split(",");
+        String[] list_times_points = object_times_points.get("time_signal").toString().split(",");
 
         //Transformando a double cada elemento de cada arreglo
         for(int i = 1; i < list_string_points_signal.length-1; i++){
-            this.points_signal.add(Double.parseDouble(list_string_points_signal[i]));
-            this.times.add(Double.parseDouble(list_string_times[i]));
+            this.fci.add(Double.parseDouble(list_string_points_signal[i]));
+            this.times_fci.add(Double.parseDouble(list_string_times[i]));
+            this.rr_peaks.add(Double.parseDouble(list_rr_peaks[i]));
+            this.signal_points.add(Double.parseDouble(list_signal_points[i]));
+            this.times_points.add(Double.parseDouble(list_times_points[i]));
         }
-
     }
 
     /*
@@ -209,9 +225,9 @@ public class Signal {
         // Obteniendo emoción predominante
         Integer max_value = Collections.max(this.cant_emotions_signal);
         Integer index = this.cant_emotions_signal.indexOf(max_value);
-        this.predominant_emotion = set_predominant_emotion_name(this.emotions_signal.get(index));
-
-
+        this.predominant_emotion = this.emotions_signal.get(index);
+        Emotion emotion = new Emotion("");
+        this.emotion_image_path = emotion.create_path(this.predominant_emotion);
     }
 
     public String set_predominant_emotion_name(String emotion_name){
@@ -219,7 +235,15 @@ public class Signal {
             return "Sorpresa";
         else if (emotion_name.equals("happiness")) {
             return "Felicidad";
-
+        }
+        else if(emotion_name.equals("fear")){
+            return "Miedo";
+        }
+        else if(emotion_name.equals("anger")){
+            return "Enojo";
+        }
+        else if(emotion_name.equals("sadness")){
+            return "Tristeza";
         }
         return "";
 
@@ -248,12 +272,16 @@ public class Signal {
         this.id = id;
     }
 
-    public List<Double> getPoints_signal() {
-        return points_signal;
+    public List<Double> getRr_peaks() {
+        return rr_peaks;
     }
 
-    public List<Double> getTimes() {
-        return times;
+    public List<Double> getPoints_signal() {
+        return fci;
+    }
+
+    public List<Double> getTimes_fci() {
+        return times_fci;
     }
 
     public List<Pair<Alert, Feature>> getTime_line() {
@@ -274,5 +302,21 @@ public class Signal {
 
     public double getStart_time_signal() {
         return start_time_signal;
+    }
+
+    public String getEmotion_image_path() {
+        return emotion_image_path;
+    }
+
+    public List<Double> getFci() {
+        return fci;
+    }
+
+    public List<Double> getSignal_points() {
+        return signal_points;
+    }
+
+    public List<Double> getTimes_points() {
+        return times_points;
     }
 }

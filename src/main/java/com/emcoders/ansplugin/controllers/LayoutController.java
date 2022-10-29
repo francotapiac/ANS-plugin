@@ -20,7 +20,9 @@ public class LayoutController extends VBox {
     @FXML
     private TitledPane panel_video;
     @FXML
-    private XYChart.Series<String, Double> series;
+    private XYChart.Series<String, Double> series_fci;
+    @FXML
+    private XYChart.Series<String, Double> series_points;
 
     //Configuraciones de tamaños
     private Integer min_width = 300;
@@ -84,24 +86,27 @@ public class LayoutController extends VBox {
 
         if(signalController != null){
             //Creando gráfico
-            this.series = new XYChart.Series();
+            this.series_fci = new XYChart.Series();
+            this.series_points = new XYChart.Series();
 
             //Modificando parámetros del gráfico
-            this.series.setName("Frecuencia Cardíaca Instantánea (bpm)");
+            this.series_fci.setName("Frecuencia Cardíaca Instantánea (FCI)");
+            this.series_points.setName("Señal Cardíaca");
 
             //Obteniendo puntos de la señal y tiempos
-            List<Double> points_signal = signalController.get_pointsSignal();
+            List<Double> points_fci = signalController.getSignal().getFci();
+            List<Double> points_signal = signalController.getSignal_points_fci();
             List<Double> times = signalController.get_times();
-            for(int i = 0; i < points_signal.size(); i++){
+            for(int i = 0; i < points_fci.size(); i++){
                 Number x = times.get(i);
-                Number y = points_signal.get(i);
+                Number y_fci = points_fci.get(i);
+                Number y_points = points_signal.get(i);
+
                 String new_format_number = format_number(x);
-                Platform.runLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        //update application thread
-                        series.getData().add(new XYChart.Data(new_format_number,y));
-                    }
+                Platform.runLater(() -> {
+                    //update application thread
+                    series_fci.getData().add(new XYChart.Data(new_format_number,y_fci));
+                    series_points.getData().add(new XYChart.Data(new_format_number,y_points));
                 });
 
             }
@@ -134,7 +139,11 @@ public class LayoutController extends VBox {
         return panel_video;
     }
 
-    public XYChart.Series getSeries() {
-        return series;
+    public XYChart.Series<String, Double> getSeries_fci() {
+        return series_fci;
+    }
+
+    public XYChart.Series<String, Double> getSeries_points() {
+        return series_points;
     }
 }

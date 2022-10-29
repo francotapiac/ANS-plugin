@@ -47,7 +47,7 @@
     </content>
     <buttonTypes>
         <ButtonType fx:id="acceptButtonType" text="Aceptar" buttonData="OK_DONE"/>
-        <ButtonType fx:id="cancelButtonType" text="Затвори" buttonData="CANCEL_CLOSE"/>
+        <ButtonType fx:id="cancelButtonType" text="Cancelar" buttonData="CANCEL_CLOSE"/>
     </buttonTypes>
     <header>
         <Label alignment="CENTER" text="Detalle alerta" textAlignment="CENTER">

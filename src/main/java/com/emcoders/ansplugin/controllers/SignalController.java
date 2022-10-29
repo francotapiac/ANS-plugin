@@ -1,14 +1,10 @@
 package com.emcoders.ansplugin.controllers;
 
-import com.emcoders.ansplugin.models.Alert;
+import com.emcoders.ansplugin.models.Emotion;
 import com.emcoders.ansplugin.models.Signal;
-import com.emcoders.scansembox.Utils.TimelineTag;
-import javafx.concurrent.Task;
-import org.freedesktop.gstreamer.Element;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 
 public class SignalController {
     Signal signal;
@@ -18,6 +14,8 @@ public class SignalController {
     Float partial_start_time;
     Float partial_end_time;
     String cardiac_coherence_description;
+    String path_image_emotion;
+    private List<Double> signal_points_fci;
 
 
     public SignalController(String path){
@@ -27,8 +25,7 @@ public class SignalController {
 
     public void create_signal(String path){
         this.signal = new Signal(path);
-
-
+        create_points_signal_fci();
     }
 
 
@@ -51,8 +48,21 @@ public class SignalController {
                 this.emotion = signal.getTime_line().get(i).getKey().getEmotion().getName();
                 this.type_alert = signal.getTime_line().get(i).getKey().getType_alert();
                 this.cardiac_coherence_description = signal.getTime_line().get(i).getKey().getDescription();
+                Emotion emotion_aux = new Emotion("");
+                this.path_image_emotion = emotion_aux.create_path(this.emotion);
                 break;
             }
+        }
+    }
+
+    // Obtiene la señal original según los puntos del FCI. Esto, debido a que se busca acotar la señal mostrada
+    public void create_points_signal_fci(){
+        signal_points_fci = new ArrayList<>();
+        List<Double> times_fci = signal.getTimes_fci();
+        for(Double time : times_fci){
+            Integer index_times_points = signal.getTimes_points().indexOf(time);
+            signal_points_fci.add(signal.getSignal_points().get(index_times_points));
+
         }
     }
 
@@ -61,7 +71,7 @@ public class SignalController {
     }
 
     public List<Double> get_times(){
-        return this.signal.getTimes();
+        return this.signal.getTimes_fci();
     }
 
     public Signal getSignal() {
@@ -90,5 +100,11 @@ public class SignalController {
 
     public String getCardiac_coherence_description() {
         return cardiac_coherence_description;
+    }
+
+    public String getPath_image_emotion() {return path_image_emotion;}
+
+    public List<Double> getSignal_points_fci() {
+        return signal_points_fci;
     }
 }
