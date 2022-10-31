@@ -680,26 +680,24 @@ public class ANSController extends CanalModel {
             segmentSignal.setAlert(alert);
             int pos_freq = 0;
             for(Pair<String, Float> element : this.signalController.getSignal().getTime_line().get(i).getValue().getFrequency_feature()){
-                System.out.println(element.getKey());
-                System.out.println(element.getValue());
-                if(pos_freq == 0)
+                if(element.getKey().equals("vlf"))
                     segmentSignal.setVlf(element.getValue());
-                else if (pos_freq == 1) {segmentSignal.setLf(element.getValue());}
-                else if (pos_freq == 2) {segmentSignal.setHf(element.getValue());}
-                else if (pos_freq == 3) {segmentSignal.setLf_hf(element.getValue());}
-                else if (pos_freq == 4) {segmentSignal.setFft_total(element.getValue());}
+                else if (element.getKey().equals("lf")) {segmentSignal.setLf(element.getValue());}
+                else if (element.getKey().equals("hf")) {segmentSignal.setHf(element.getValue());}
+                else if (element.getKey().equals("lf-hf")) {segmentSignal.setLf_hf(element.getValue());}
+                else if (element.getKey().equals("fft_total")) {segmentSignal.setFft_total(element.getValue());}
                 pos_freq ++;
             }
             int pos_time = 0;
             for(Pair<String, Float> element : this.signalController.getSignal().getTime_line().get(i).getValue().getTimes_feature()){
-                if(pos_time == 0)
+                if(element.getKey().equals("hr_mean"))
                     segmentSignal.setHr_mean(element.getValue());
-                else if (pos_time == 1) {segmentSignal.setHr_min(element.getValue());}
-                else if (pos_time == 2) {segmentSignal.setHr_max(element.getValue());}
-                else if (pos_time == 3) {segmentSignal.setSdnn(element.getValue());}
-                else if (pos_time == 4) {segmentSignal.setRmssd(element.getValue());}
-                else if (pos_time == 5) {segmentSignal.setSdsd(element.getValue());}
-                else if (pos_time == 6) {segmentSignal.setPnn50(element.getValue());}
+                else if (element.getKey().equals("hr_min")) {segmentSignal.setHr_min(element.getValue());}
+                else if (element.getKey().equals("hr_max")) {segmentSignal.setHr_max(element.getValue());}
+                else if (element.getKey().equals("sdnn")) {segmentSignal.setSdnn(element.getValue());}
+                else if (element.getKey().equals("rmssd")) {segmentSignal.setRmssd(element.getValue());}
+                else if (element.getKey().equals("sdsd")) {segmentSignal.setSdsd(element.getValue());}
+                else if (element.getKey().equals("pnn50")) {segmentSignal.setPnn50(element.getValue());}
                 pos_time++;
             }
 

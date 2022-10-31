@@ -133,7 +133,8 @@ public class Signal {
             float ratio_coherence = Float.parseFloat(jsonObject.get("ratio_coherence").toString());
             List<Pair<String, Float>> times_features = json_object_to_pair_float(jsonObject.get("time_df"));
             List<Pair<String, Float>> freq_features = json_object_to_pair_float(jsonObject.get("freq_df"));
-
+            System.out.println(times_features);
+            System.out.println(freq_features);
             //Creando objetos para cada segmento analizado
             Emotion emotion = new Emotion(name_emotion);
             Feature feature = new Feature(times_features, freq_features, start_time, end_time);
@@ -156,6 +157,7 @@ public class Signal {
     @return:        Lista de pares String-Float
      */
     public List<Pair<String, Float>> json_object_to_pair_float(Object object){
+        System.out.println(object);
         String object_string = object.toString();
         String object_string_1 = object_string.replace("[","");
         String object_string_2 = object_string_1.replace("]","");
@@ -163,9 +165,12 @@ public class Signal {
         String object_string_4 = object_string_3.replace("}","");
         String[] list_array_objects = object_string_4.split(",");
         List<Pair<String, Float>> list_pairs = new ArrayList<>();
-        for(int i = 0; i < list_array_objects.length - 1; i = i + 1){
-            String[] pair_object =  list_array_objects[i].split(":");
-            Pair p = new Pair(pair_object[0], Float.parseFloat(pair_object[1]));
+        for(int i = 0; i < list_array_objects.length; i = i + 1){
+            String[] pair_object_1 =  list_array_objects[i].split(":");
+            StringBuilder key = new StringBuilder(pair_object_1[0]);
+            StringBuilder key_2 = key.deleteCharAt(0);
+            StringBuilder key_3 = key_2.deleteCharAt(key.length()-1);
+            Pair p = new Pair(key_3.toString(), Float.parseFloat(pair_object_1[1]));
             list_pairs.add(p);
         }
         return list_pairs;
