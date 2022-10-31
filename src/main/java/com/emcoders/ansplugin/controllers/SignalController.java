@@ -61,6 +61,7 @@ public class SignalController {
         List<Double> times_fci = signal.getTimes_fci();
         for(Double time : times_fci){
             Integer index_times_points = signal.getTimes_points().indexOf(time);
+            System.out.println("Index: " + index_times_points);
             signal_points_fci.add(signal.getSignal_points().get(index_times_points));
 
         }

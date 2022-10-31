@@ -156,10 +156,16 @@ public class Signal {
     @return:        Lista de pares String-Float
      */
     public List<Pair<String, Float>> json_object_to_pair_float(Object object){
-        String[] list_array_object = object.toString().split(",");
+        String object_string = object.toString();
+        String object_string_1 = object_string.replace("[","");
+        String object_string_2 = object_string_1.replace("]","");
+        String object_string_3 = object_string_2.replace("{","");
+        String object_string_4 = object_string_3.replace("}","");
+        String[] list_array_objects = object_string_4.split(",");
         List<Pair<String, Float>> list_pairs = new ArrayList<>();
-        for(int i = 0; i < list_array_object.length - 1; i = i + 2){
-            Pair p = new Pair(list_array_object[i], list_array_object[i+1]);
+        for(int i = 0; i < list_array_objects.length - 1; i = i + 1){
+            String[] pair_object =  list_array_objects[i].split(":");
+            Pair p = new Pair(pair_object[0], Float.parseFloat(pair_object[1]));
             list_pairs.add(p);
         }
         return list_pairs;
@@ -189,11 +195,14 @@ public class Signal {
 
         //Transformando a double cada elemento de cada arreglo
         for(int i = 1; i < list_string_points_signal.length-1; i++){
-            this.fci.add(Double.parseDouble(list_string_points_signal[i]));
-            this.times_fci.add(Double.parseDouble(list_string_times[i]));
-            this.rr_peaks.add(Double.parseDouble(list_rr_peaks[i]));
-            this.signal_points.add(Double.parseDouble(list_signal_points[i]));
-            this.times_points.add(Double.parseDouble(list_times_points[i]));
+            this.fci.add(format_number_double(Double.parseDouble(list_string_points_signal[i])));
+            this.times_fci.add(format_number_double(Double.parseDouble(list_string_times[i])));
+            this.rr_peaks.add(format_number_double(Double.parseDouble(list_rr_peaks[i])));
+
+        }
+        for(int i = 1; i < list_signal_points.length -1; i++){
+            this.signal_points.add(format_number_double(Double.parseDouble(list_signal_points[i])));
+            this.times_points.add(format_number_double(Double.parseDouble(list_times_points[i])));
         }
     }
 
@@ -256,6 +265,13 @@ public class Signal {
         String[] list_number = textoFormateado.split(",");
         String new_number = list_number[0] + "." + list_number[1];
         return Float.parseFloat(new_number);
+    }
+    public Double format_number_double(Double number){
+        DecimalFormat numeroFormateado = new DecimalFormat("#.0000");
+        String textoFormateado = numeroFormateado.format(number);
+        String[] list_number = textoFormateado.split(",");
+        String new_number = list_number[0] + "." + list_number[1];
+        return Double.parseDouble(new_number);
     }
 
 

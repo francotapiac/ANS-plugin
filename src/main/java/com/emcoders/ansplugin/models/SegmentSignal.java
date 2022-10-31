@@ -1,5 +1,7 @@
 package com.emcoders.ansplugin.models;
 
+import javafx.scene.control.TableColumn;
+
 public class SegmentSignal {
 
     private String id;
@@ -8,15 +10,20 @@ public class SegmentSignal {
     private String emotion;
     private String cardiac_coherence;
     private String alert;
+    private  Float vlf;
+    private Float lf;
+    private Float hf;
+    private Float lf_hf;
+    private Float fft_total;
+    private Float hr_mean;
+    private Float hr_min;
+    private Float hr_max;
+    private Float sdnn;
+    private Float rmssd;
+    private Float sdsd;
+    private Float pnn50;
 
-    public SegmentSignal(String id, Float initial_time, Float final_time, String emotion, String cardiac_coherence, String alert){
-        this.id = id;
-        this.initial_time = initial_time;
-        this.final_time = final_time;
-        this.emotion = emotion;
-        this.cardiac_coherence = cardiac_coherence;
-        this.alert = alert;
-    }
+
 
     public String getId() {
         return id;
@@ -64,5 +71,101 @@ public class SegmentSignal {
 
     public void setAlert(String alert) {
         this.alert = alert;
+    }
+
+    public Float getVlf() {
+        return vlf;
+    }
+
+    public void setVlf(Float vlf) {
+        this.vlf = vlf;
+    }
+
+    public Float getLf() {
+        return lf;
+    }
+
+    public void setLf(Float lf) {
+        this.lf = lf;
+    }
+
+    public Float getHf() {
+        return hf;
+    }
+
+    public void setHf(Float hf) {
+        this.hf = hf;
+    }
+
+    public Float getLf_hf() {
+        return lf_hf;
+    }
+
+    public void setLf_hf(Float lf_hf) {
+        this.lf_hf = lf_hf;
+    }
+
+    public Float getFft_total() {
+        return fft_total;
+    }
+
+    public void setFft_total(Float fft_total) {
+        this.fft_total = fft_total;
+    }
+
+    public Float getHr_mean() {
+        return hr_mean;
+    }
+
+    public void setHr_mean(Float hr_mean) {
+        this.hr_mean = hr_mean;
+    }
+
+    public Float getHr_min() {
+        return hr_min;
+    }
+
+    public void setHr_min(Float hr_min) {
+        this.hr_min = hr_min;
+    }
+
+    public Float getHr_max() {
+        return hr_max;
+    }
+
+    public void setHr_max(Float hr_max) {
+        this.hr_max = hr_max;
+    }
+
+    public Float getSdnn() {
+        return sdnn;
+    }
+
+    public void setSdnn(Float sdnn) {
+        this.sdnn = sdnn;
+    }
+
+    public Float getRmssd() {
+        return rmssd;
+    }
+
+    public void setRmssd(Float rmssd) {
+        this.rmssd = rmssd;
+    }
+
+    public Float getSdsd() {
+        return sdsd;
+    }
+
+    public void setSdsd(Float sdsd) {
+        this.sdsd = sdsd;
+    }
+
+    public Float getPnn50() {
+        return pnn50;
+    }
+
+    public void setPnn50(Float pnn50) {
+        this.pnn50 = pnn50;
     }
 }

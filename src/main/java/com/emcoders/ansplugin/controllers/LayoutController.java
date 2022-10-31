@@ -2,6 +2,7 @@ package com.emcoders.ansplugin.controllers;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
@@ -98,11 +99,12 @@ public class LayoutController extends VBox {
             List<Double> points_signal = signalController.getSignal_points_fci();
             List<Double> times = signalController.get_times();
             for(int i = 0; i < points_fci.size(); i++){
+
                 Number x = times.get(i);
                 Number y_fci = points_fci.get(i);
                 Number y_points = points_signal.get(i);
-
                 String new_format_number = format_number(x);
+
                 Platform.runLater(() -> {
                     //update application thread
                     series_fci.getData().add(new XYChart.Data(new_format_number,y_fci));

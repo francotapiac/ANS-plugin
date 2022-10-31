@@ -1,10 +1,7 @@
 package com.emcoders.ansplugin;
 
 import com.emcoders.ansplugin.components.TagDialog;
-import com.emcoders.ansplugin.controllers.AlertController;
-import com.emcoders.ansplugin.controllers.LayoutController;
-import com.emcoders.ansplugin.controllers.SignalController;
-import com.emcoders.ansplugin.controllers.VideoController;
+import com.emcoders.ansplugin.controllers.*;
 import com.emcoders.ansplugin.models.SegmentSignal;
 import com.emcoders.ansplugin.models.Signal;
 import com.emcoders.scansembox.Events.AddSourceEvent;
@@ -38,6 +35,7 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.chart.Axis;
+import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.Label;
@@ -59,6 +57,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
@@ -67,6 +66,7 @@ import java.util.concurrent.FutureTask;
 
 import com.jfoenix.controls.JFXButton;
 import javafx.util.Duration;
+import javafx.util.Pair;
 
 
 public class ANSController extends CanalModel {
@@ -82,6 +82,11 @@ public class ANSController extends CanalModel {
     private VBox resources_vbox;
     @FXML
     private LineChart<String, Double> chart;
+    @FXML
+    private CategoryAxis xAxis;
+
+    @FXML
+    private NumberAxis yAxis;
     @FXML
     private MediaView media;
 
@@ -155,6 +160,8 @@ public class ANSController extends CanalModel {
     LayoutController layoutController;
     VideoController videoController;
 
+    DetailsController detailsController;
+
     Float millis;
     TimelineElement timelineElement;
     String alert_task;
@@ -211,7 +218,7 @@ public class ANSController extends CanalModel {
 
         this.pane_principal.toFront();
         this.tagDialog = new TagDialog();
-
+        this.detailsController = new DetailsController();
 
         //seek(13.6);
 
@@ -328,10 +335,17 @@ public class ANSController extends CanalModel {
         this.chart.getYAxis().setLabel("Frecuencia Cardíaca (Hz)");
         this.chart.setCreateSymbols(false);
         //Inicializando gráfico
-        this.chart.getData().addAll(layoutController.getSeries_fci(), layoutController.getSeries_points());
+        //this.chart.getData().addAll(layoutController.getSeries_fci(), layoutController.getSeries_points());
+        this.chart.getData().addAll(layoutController.getSeries_fci());
+        yAxis.setLowerBound(78);
+        yAxis.setUpperBound(82);
+        this.chart.getYAxis().setAutoRanging(false);
         this.chart.setAnimated(false);
         //*********************** Tabla de detalles ***********************
         create_table_detail();
+
+        detailsController.create_report_excel(this.table_detail);
+
     }
 
     public TimelineElement loadProjectSource(String path) {
@@ -617,20 +631,84 @@ public class ANSController extends CanalModel {
         this.emotion_detail.setCellValueFactory(new PropertyValueFactory<>("emotion"));
         this.cardiac_detail.setCellValueFactory(new PropertyValueFactory<>("cardiac_coherence"));
         this.alert_detail.setCellValueFactory(new PropertyValueFactory<>("alert"));
+
+        TableColumn vlf = new TableColumn("Muy Baja Frecuencia (VLF)");
+        TableColumn lf = new TableColumn("Baja Frecuencia (LF)");
+        TableColumn hf = new TableColumn("Alta Frecuencia (HF)");
+        TableColumn lf_hf = new TableColumn("LF/HF");
+        TableColumn fft_total = new TableColumn("FFT Total");
+        TableColumn hr_mean = new TableColumn("hr_mean");
+        TableColumn hr_min = new TableColumn("hr_min");
+        TableColumn hr_max = new TableColumn("hr_max");
+        TableColumn sdnn = new TableColumn("sdnn");
+        TableColumn rmssd = new TableColumn("rmssd");
+        TableColumn sdsd = new TableColumn("sdsd");
+        TableColumn pnn50 = new TableColumn("pnn50");
+
+        vlf.setCellValueFactory(new PropertyValueFactory<>("vlf"));
+        lf.setCellValueFactory(new PropertyValueFactory<>("lf"));
+        hf.setCellValueFactory(new PropertyValueFactory<>("hf"));
+        lf_hf.setCellValueFactory(new PropertyValueFactory<>("lf_hf"));
+        fft_total.setCellValueFactory(new PropertyValueFactory<>("fft_total"));
+        hr_mean.setCellValueFactory(new PropertyValueFactory<>("hr_mean"));
+        hr_min.setCellValueFactory(new PropertyValueFactory<>("hr_min"));
+        hr_max.setCellValueFactory(new PropertyValueFactory<>("hr_max"));
+        sdnn.setCellValueFactory(new PropertyValueFactory<>("sdnn"));
+        rmssd.setCellValueFactory(new PropertyValueFactory<>("rmssd"));
+        sdsd.setCellValueFactory(new PropertyValueFactory<>("sdsd"));
+        pnn50.setCellValueFactory(new PropertyValueFactory<>("pnn50"));
+
+
+        this.table_detail.getColumns().addAll(vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd, pnn50);
         ObservableList<SegmentSignal> list = FXCollections.observableArrayList();
+        // Creando nuevo segmento de la señal
+
+        
         Integer contador = 1;
         for (Integer i = 0; i < signalController.getSignal().getTime_line().size(); i ++){
+            SegmentSignal segmentSignal = new SegmentSignal();
             Float initial_time = signalController.getSignal().getTime_line().get(i).getKey().getStart_time();
             Float final_time = signalController.getSignal().getTime_line().get(i).getKey().getEnd_time();
             String emotion = signalController.getSignal().getTime_line().get(i).getKey().getEmotion().getName();
             String cardiac_coherence = signalController.getSignal().getTime_line().get(i).getKey().getDescription();
             String alert = signalController.getSignal().getTime_line().get(i).getKey().getText_alert();
-            SegmentSignal segmentSignal = new SegmentSignal(contador.toString(),initial_time,final_time,emotion,cardiac_coherence,alert);
+            segmentSignal.setId(contador.toString());
+            segmentSignal.setInitial_time(initial_time);
+            segmentSignal.setFinal_time(final_time);
+            segmentSignal.setEmotion(emotion);
+            segmentSignal.setCardiac_coherence(cardiac_coherence);
+            segmentSignal.setAlert(alert);
+            int pos_freq = 0;
+            for(Pair<String, Float> element : this.signalController.getSignal().getTime_line().get(i).getValue().getFrequency_feature()){
+                System.out.println(element.getKey());
+                System.out.println(element.getValue());
+                if(pos_freq == 0)
+                    segmentSignal.setVlf(element.getValue());
+                else if (pos_freq == 1) {segmentSignal.setLf(element.getValue());}
+                else if (pos_freq == 2) {segmentSignal.setHf(element.getValue());}
+                else if (pos_freq == 3) {segmentSignal.setLf_hf(element.getValue());}
+                else if (pos_freq == 4) {segmentSignal.setFft_total(element.getValue());}
+                pos_freq ++;
+            }
+            int pos_time = 0;
+            for(Pair<String, Float> element : this.signalController.getSignal().getTime_line().get(i).getValue().getTimes_feature()){
+                if(pos_time == 0)
+                    segmentSignal.setHr_mean(element.getValue());
+                else if (pos_time == 1) {segmentSignal.setHr_min(element.getValue());}
+                else if (pos_time == 2) {segmentSignal.setHr_max(element.getValue());}
+                else if (pos_time == 3) {segmentSignal.setSdnn(element.getValue());}
+                else if (pos_time == 4) {segmentSignal.setRmssd(element.getValue());}
+                else if (pos_time == 5) {segmentSignal.setSdsd(element.getValue());}
+                else if (pos_time == 6) {segmentSignal.setPnn50(element.getValue());}
+                pos_time++;
+            }
+
             list.add(segmentSignal);
             contador++;
             //System.out.println(segmentSignal.getEmotion());
         }
         this.table_detail.setItems(list);
+
     }
 
     public void set_data_abstact(double millis){

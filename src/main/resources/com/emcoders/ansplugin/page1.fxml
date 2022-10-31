@@ -40,6 +40,7 @@
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TableColumn?>
@@ -173,10 +174,10 @@
                   </HBox>
                   <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="285.0" prefWidth="805.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
                      <xAxis>
-                        <CategoryAxis side="BOTTOM" />
+                        <CategoryAxis side="BOTTOM" fx:id="xAxis" />
                      </xAxis>
                      <yAxis>
-                        <NumberAxis side="LEFT" />
+                        <NumberAxis fx:id="yAxis" side="LEFT" />
                      </yAxis>
                      <padding>
                         <Insets bottom="1.0" />
@@ -307,7 +308,7 @@
          <children>
             <VBox layoutX="7.0" layoutY="13.0" prefHeight="587.0" prefWidth="821.0" styleClass="container" stylesheets="@styles.css">
                <children>
-                  <HBox prefHeight="110.0" prefWidth="821.0">
+                  <HBox prefHeight="61.0" prefWidth="821.0">
                      <children>
                         <Label alignment="CENTER" prefHeight="43.0" prefWidth="272.0" text="Análisis Detallado">
                            <font>
@@ -317,9 +318,9 @@
                         <Separator prefHeight="57.0" prefWidth="531.0" />
                      </children>
                   </HBox>
-                  <ScrollPane fx:id="scroll_detail" prefHeight="555.0" prefWidth="821.0">
+                  <ScrollPane fx:id="scroll_detail" prefHeight="436.0" prefWidth="821.0">
                      <content>
-                        <TableView fx:id="table_detail" prefHeight="510.0" prefWidth="819.0">
+                        <TableView fx:id="table_detail" prefHeight="429.0" prefWidth="819.0">
                            <columns>
                               <TableColumn fx:id="segment_detail" prefWidth="75.0" text="Segmento" />
                               <TableColumn fx:id="initial_time_detail" prefWidth="129.0" text="Tiempo Inicial (s)" />
@@ -331,6 +332,23 @@
                         </TableView>
                      </content>
                   </ScrollPane>
+                  <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                     <children>
+                        <RadioButton mnemonicParsing="false" text="Análisis General">
+                           <HBox.margin>
+                              <Insets left="5.0" right="5.0" />
+                           </HBox.margin>
+                           <font>
+                              <Font name="Arial Rounded MT Bold" size="12.0" />
+                           </font>
+                        </RadioButton>
+                        <RadioButton mnemonicParsing="false" text="Dominio de las Frecuencia">
+                           <font>
+                              <Font name="Arial Rounded MT Bold" size="12.0" />
+                           </font>
+                        </RadioButton>
+                     </children>
+                  </HBox>
                </children>
             </VBox>
          </children>

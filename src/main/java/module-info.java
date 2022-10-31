@@ -9,6 +9,7 @@ module com.emcoders.ansplugin {
     requires opencv;
     requires javafx.media;
     requires com.jfoenix;
+    requires org.apache.poi.poi;
 
 
     opens com.emcoders.ansplugin to javafx.fxml;
