@@ -38,9 +38,7 @@ import javafx.scene.chart.Axis;
 import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.input.MouseEvent;
@@ -81,9 +79,9 @@ public class ANSController extends CanalModel {
     @FXML
     private VBox resources_vbox;
     @FXML
-    private LineChart<String, Double> chart;
+    private LineChart<Double, Double> chart;
     @FXML
-    private CategoryAxis xAxis;
+    private NumberAxis xAxis;
 
     @FXML
     private NumberAxis yAxis;
@@ -130,10 +128,7 @@ public class ANSController extends CanalModel {
     private JFXButton alert_btn;
     @FXML
     private JFXButton general_btn;
-    @FXML
-    private JFXButton btn_chart_fci;
-    @FXML
-    private JFXButton btn_chart_rr;
+
     @FXML
     private JFXButton btn_study_segment;
 
@@ -144,6 +139,20 @@ public class ANSController extends CanalModel {
     @FXML
     TagDialog tagDialog;
 
+    Dialog<String> dialog_charge;
+
+    @FXML
+    private RadioButton radio_general;
+
+    @FXML
+    private RadioButton radio_segmento;
+
+    @FXML
+    private RadioButton radio_tiempo;
+
+    private Double lower_x_axis;
+    private Double upper_x_axis;
+    private int type_view_chart;
     private MFXGenericDialog dialogContent;
     private MFXStageDialog dialog;
 
@@ -219,6 +228,7 @@ public class ANSController extends CanalModel {
         this.pane_principal.toFront();
         this.tagDialog = new TagDialog();
         this.detailsController = new DetailsController();
+        this.radio_general.setSelected(true);
 
         //seek(13.6);
 
@@ -250,7 +260,16 @@ public class ANSController extends CanalModel {
         initial_time_task = signalController.getPartial_start_time().toString();
         final_time_task = signalController.getPartial_end_time().toString();
         path_image_emotion =  ANSController.class.getResourceAsStream(signalController.getPath_image_emotion());
-        Platform.runLater(() -> set_data_abstact(millis));
+        select_type_view_chart(type_view_chart);
+        Platform.runLater(() -> {
+            //update application thread
+            xAxis.setLowerBound(lower_x_axis);
+            xAxis.setUpperBound(upper_x_axis);
+            xAxis.setAutoRanging(false);
+            set_data_abstact(millis);
+        });
+
+
 
         //System.out.println(millis);
     }
@@ -268,6 +287,7 @@ public class ANSController extends CanalModel {
 
 
     public TimelineElement openSource(String path) {
+
         //Ruta completa
         String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
 
@@ -304,7 +324,6 @@ public class ANSController extends CanalModel {
         this.emotion_abstract.setText(signalController.getSignal().getPredominant_emotion().toString());
         try {
             InputStream url = ANSController.class.getResourceAsStream(signalController.getSignal().getEmotion_image_path());
-            System.out.println(url);
             this.image_emotion.setImage(new Image(url));
             this.image_emotion.setFitHeight(181);
             this.image_emotion.setFitWidth(150);
@@ -327,28 +346,33 @@ public class ANSController extends CanalModel {
         }
 
         //*********************** Gráfico ***********************
-
         //Modificando atributos de gráfico
         this.chart.lookup(".chart-plot-background").setStyle("-fx-background-color: transparent;");
         this.chart.setTitle("Frecuencia Cardíaca Instantánea en el Tiempo");
         this.chart.getXAxis().setLabel("Tiempo (s)");
         this.chart.getYAxis().setLabel("Frecuencia Cardíaca (Hz)");
         this.chart.setCreateSymbols(false);
+
         //Inicializando gráfico
         //this.chart.getData().addAll(layoutController.getSeries_fci(), layoutController.getSeries_points());
         this.chart.getData().addAll(layoutController.getSeries_fci());
         yAxis.setLowerBound(78);
         yAxis.setUpperBound(82);
+        xAxis.setLowerBound(signalController.getSignal().getStart_time_signal());
+        xAxis.setUpperBound(signalController.getSignal().getEnd_time_signal());
+
+        this.type_view_chart = 1;
         this.chart.getYAxis().setAutoRanging(false);
         this.chart.setAnimated(false);
+
         //*********************** Tabla de detalles ***********************
         create_table_detail();
-
-        detailsController.create_report_excel(this.table_detail);
+        detailsController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
 
     }
 
     public TimelineElement loadProjectSource(String path) {
+        detailsController.read_xls(path + ".xls",true);
         String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
         // Instanciando controlador de señal
         signalController = new SignalController(route_api);
@@ -499,8 +523,6 @@ public class ANSController extends CanalModel {
 
     public void shutdown() {
     }
-
-
     @FXML
     void handleButtonAlert(ActionEvent event) {
         this.general_btn.setStyle("-fx-background-color: White");
@@ -556,8 +578,7 @@ public class ANSController extends CanalModel {
         this.btn_study_segment.setButtonType(JFXButton.ButtonType.FLAT);
         this.btn_study_signal.setStyle("-fx-background-color:  #d8d7f6");
         this.btn_study_signal.setButtonType(JFXButton.ButtonType.RAISED);
-        System.out.print("Millis: ");
-        System.out.println(millis);
+
 
 
         Service<Void> service = new Service<Void>() {
@@ -573,7 +594,6 @@ public class ANSController extends CanalModel {
                         initial_time_task = signalController.getPartial_start_time().toString();
                         final_time_task = signalController.getPartial_end_time().toString();
                         final CountDownLatch latch = new CountDownLatch(1);
-                        System.out.println("T2: " + System.currentTimeMillis());
 
                         Platform.runLater(new Runnable() {
                             @Override
@@ -605,23 +625,37 @@ public class ANSController extends CanalModel {
         set_data_abstact(millis);
 
     }
-    @FXML
-    void handleButtonFCI(ActionEvent event) {
-        this.btn_chart_fci.setStyle("-fx-background-color: #F0F0F6");
-        this.btn_chart_fci.setButtonType(JFXButton.ButtonType.FLAT);
-        this.btn_chart_rr.setStyle("-fx-background-color:  #d8d7f6");
-        this.btn_chart_rr.setButtonType(JFXButton.ButtonType.RAISED);
-        //set_data_abstact(millis);
-    }
 
     @FXML
-    void handleButtonRR(ActionEvent event) {
-        this.btn_chart_rr.setStyle("-fx-background-color: #F0F0F6");
-        this.btn_chart_rr.setButtonType(JFXButton.ButtonType.FLAT);
-        this.btn_chart_fci.setStyle("-fx-background-color:  #d8d7f6");
-        this.btn_chart_fci.setButtonType(JFXButton.ButtonType.RAISED);
-        //set_data_abstact(millis);
+    void set_type_signal_chart(ActionEvent event) {
+        if(this.radio_general.isSelected()){
+            type_view_chart = 1;
+        }
+        else if(this.radio_segmento.isSelected()){
+            type_view_chart = 2;
+        }
+        else if(this.radio_tiempo.isSelected()){
+            type_view_chart = 3;
+        }
     }
+
+    void select_type_view_chart(int type_view){
+        if(type_view == 1){
+            this.lower_x_axis = signalController.getSignal().getStart_time_signal();
+            this.upper_x_axis = this.signalController.getSignal().getEnd_time_signal();
+        }
+        else if(type_view == 2){
+            signalController.get_particular_data(this.millis);
+            this.lower_x_axis = Double.parseDouble(signalController.getPartial_start_time().toString())/1000;
+            this.upper_x_axis = Double.parseDouble(signalController.getPartial_end_time().toString())/1000;
+        }
+        else if(type_view == 3){
+            this.lower_x_axis = signalController.getSignal().getStart_time_signal();
+            this.upper_x_axis = Double.parseDouble(this.millis.toString())/1000;
+        }
+
+    }
+
     // Crear tabla con detalles de cada alerta
     @FXML
     void create_table_detail(){
@@ -643,7 +677,7 @@ public class ANSController extends CanalModel {
         TableColumn sdnn = new TableColumn("sdnn");
         TableColumn rmssd = new TableColumn("rmssd");
         TableColumn sdsd = new TableColumn("sdsd");
-        TableColumn pnn50 = new TableColumn("pnn50");
+        //TableColumn pnn50 = new TableColumn("pnn50");
 
         vlf.setCellValueFactory(new PropertyValueFactory<>("vlf"));
         lf.setCellValueFactory(new PropertyValueFactory<>("lf"));
@@ -656,10 +690,10 @@ public class ANSController extends CanalModel {
         sdnn.setCellValueFactory(new PropertyValueFactory<>("sdnn"));
         rmssd.setCellValueFactory(new PropertyValueFactory<>("rmssd"));
         sdsd.setCellValueFactory(new PropertyValueFactory<>("sdsd"));
-        pnn50.setCellValueFactory(new PropertyValueFactory<>("pnn50"));
+        //ddpnn50.setCellValueFactory(new PropertyValueFactory<>("pnn50"));
 
 
-        this.table_detail.getColumns().addAll(vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd, pnn50);
+        this.table_detail.getColumns().addAll(vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd);
         ObservableList<SegmentSignal> list = FXCollections.observableArrayList();
         // Creando nuevo segmento de la señal
 
@@ -697,7 +731,7 @@ public class ANSController extends CanalModel {
                 else if (element.getKey().equals("sdnn")) {segmentSignal.setSdnn(element.getValue());}
                 else if (element.getKey().equals("rmssd")) {segmentSignal.setRmssd(element.getValue());}
                 else if (element.getKey().equals("sdsd")) {segmentSignal.setSdsd(element.getValue());}
-                else if (element.getKey().equals("pnn50")) {segmentSignal.setPnn50(element.getValue());}
+                //else if (element.getKey().equals("pnn50")) {segmentSignal.setPnn50(element.getValue());}
                 pos_time++;
             }
 
@@ -719,7 +753,6 @@ public class ANSController extends CanalModel {
         image_emotion.setImage(new Image(path_image_emotion));
         this.image_emotion.setFitHeight(181);
         this.image_emotion.setFitWidth(150);
-        System.out.println("Tiempo: " + millis);
 
     }
 
@@ -750,6 +783,23 @@ public class ANSController extends CanalModel {
                         timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS()));
             }
         }
+    }
+
+    @FXML
+    void handleButtonReport(ActionEvent event) {
+        detailsController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+
+        //Creating a dialog
+        Dialog<String> dialog = new Dialog<String>();
+        //Setting the title
+        dialog.setTitle("Información");
+        ButtonType type = new ButtonType("Ok", ButtonBar.ButtonData.OK_DONE);
+        //Setting the content of the dialog
+        dialog.setContentText("Se ha creado el reporte en el directorio: " + this.getProjectDir() + " \n con el nombre: " + this.source_name + ".xls");
+        //Adding buttons to the dialog pane
+        dialog.getDialogPane().getButtonTypes().add(type);
+        dialog.showAndWait();
+
     }
 
 
@@ -810,7 +860,27 @@ public class ANSController extends CanalModel {
 
     }
 
+    public Dialog create_charge_dialog(){
+        this.dialog_charge = new Dialog<>();
+        //Setting the title
+        this.dialog_charge.setTitle("Procesando señal");
+        //Setting the content of the dialog
+        this.dialog_charge.setContentText("EMCODER-Heart se encuentra analizando la señal ingresada...");
 
+        final ProgressBar pb = new ProgressBar();
+        pb.setProgress(-1.0f);
+        final ProgressIndicator pin = new ProgressIndicator();
+        pin.setProgress(-1.0f);
+
+        final HBox hb = new HBox();
+        hb.setSpacing(5);
+        hb.setAlignment(Pos.CENTER);
+        hb.getChildren().addAll(pb,pin);
+        //Adding buttons to the dialog pane
+        dialog_charge.getDialogPane().getChildren().addAll(hb);
+        dialog_charge.showAndWait();
+        return this.dialog_charge;
+    }
 
 
     // Entrega un número con formato .0000

@@ -21,9 +21,9 @@ public class LayoutController extends VBox {
     @FXML
     private TitledPane panel_video;
     @FXML
-    private XYChart.Series<String, Double> series_fci;
+    private XYChart.Series<Double, Double> series_fci;
     @FXML
-    private XYChart.Series<String, Double> series_points;
+    private XYChart.Series<Double, Double> series_points;
 
     //Configuraciones de tamaños
     private Integer min_width = 300;
@@ -103,12 +103,12 @@ public class LayoutController extends VBox {
                 Number x = times.get(i);
                 Number y_fci = points_fci.get(i);
                 Number y_points = points_signal.get(i);
-                String new_format_number = format_number(x);
+                Double new_format_number = Double.parseDouble(format_number(x));
 
                 Platform.runLater(() -> {
                     //update application thread
                     series_fci.getData().add(new XYChart.Data(new_format_number,y_fci));
-                    series_points.getData().add(new XYChart.Data(new_format_number,y_points));
+                    //series_points.getData().add(new XYChart.Data(new_format_number,y_points));
                 });
 
             }
@@ -141,11 +141,11 @@ public class LayoutController extends VBox {
         return panel_video;
     }
 
-    public XYChart.Series<String, Double> getSeries_fci() {
+    public XYChart.Series<Double, Double> getSeries_fci() {
         return series_fci;
     }
 
-    public XYChart.Series<String, Double> getSeries_points() {
+    public XYChart.Series<Double, Double> getSeries_points() {
         return series_points;
     }
 }

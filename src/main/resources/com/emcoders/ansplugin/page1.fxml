@@ -35,7 +35,6 @@
 <?import com.jfoenix.controls.JFXButton?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.Cursor?>
-<?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.LineChart?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.ComboBox?>
@@ -45,6 +44,7 @@
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.AnchorPane?>
@@ -124,18 +124,13 @@
       </VBox>
       <VBox fx:id="abstract_vbox" alignment="TOP_CENTER" layoutX="14.0" layoutY="364.0" prefHeight="290.0" prefWidth="205.0" styleClass="container" stylesheets="@styles.css" AnchorPane.bottomAnchor="19.0" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="364.0">
          <children>
-            <Label alignment="CENTER" prefHeight="55.0" prefWidth="206.0" text="Emoción">
+            <Label fx:id="emotion_abstract" alignment="CENTER" prefHeight="55.0" prefWidth="206.0" text="Nombre emoción">
                <font>
                   <Font name="Arial Rounded MT Bold" size="14.0" />
                </font>
             </Label>
             <Separator prefHeight="19.0" prefWidth="190.0" />
             <ImageView fx:id="image_emotion" fitHeight="150.0" fitWidth="181.0" pickOnBounds="true" preserveRatio="true" />
-            <Label fx:id="emotion_abstract" alignment="CENTER" prefHeight="55.0" prefWidth="206.0" text="Nombre emoción">
-               <font>
-                  <Font name="Arial Rounded MT Bold" size="14.0" />
-               </font>
-            </Label>
             <Separator prefHeight="19.0" prefWidth="190.0" />
             <JFXButton fx:id="btn_set_emotion" buttonType="RAISED" onAction="#handleButtonSignal" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Modificar emoción">
                <opaqueInsets>
@@ -172,9 +167,9 @@
                         <Separator prefHeight="57.0" prefWidth="531.0" />
                      </children>
                   </HBox>
-                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="285.0" prefWidth="805.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
+                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="260.0" prefWidth="805.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
                      <xAxis>
-                        <CategoryAxis side="BOTTOM" fx:id="xAxis" />
+                        <NumberAxis side="BOTTOM" fx:id="xAxis" />
                      </xAxis>
                      <yAxis>
                         <NumberAxis fx:id="yAxis" side="LEFT" />
@@ -186,33 +181,34 @@
                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
                      </VBox.margin>
                   </LineChart>
+                  <Label alignment="CENTER" prefHeight="15.0" prefWidth="852.0" text="Tipo de visualización de señal">
+                     <font>
+                        <Font name="Arial Rounded MT Bold" size="12.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets bottom="5.0" />
+                     </VBox.margin>
+                  </Label>
                   <HBox alignment="CENTER" prefHeight="42.0" prefWidth="825.0">
                      <children>
-                        <JFXButton fx:id="btn_chart_rr" buttonType="RAISED" onAction="#handleButtonRR" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Gráfico R-R">
-                           <opaqueInsets>
-                              <Insets />
-                           </opaqueInsets>
-                           <cursor>
-                              <Cursor fx:constant="HAND" />
-                           </cursor>
+                        <RadioButton fx:id="radio_general" mnemonicParsing="false" onAction="#set_type_signal_chart" text="General">
                            <HBox.margin>
-                              <Insets left="10.0" right="10.0" />
+                              <Insets left="5.0" right="5.0" />
                            </HBox.margin>
-                           <font>
-                              <Font name="Arial Rounded MT Bold" size="12.0" />
-                           </font>
-                        </JFXButton>
-                        <JFXButton fx:id="btn_chart_fci" onAction="#handleButtonFCI" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: F0F0F6; -fx-background-radius: 30;" text="Gráfico FCI">
-                           <opaqueInsets>
-                              <Insets />
-                           </opaqueInsets>
-                           <cursor>
-                              <Cursor fx:constant="HAND" />
-                           </cursor>
-                           <font>
-                              <Font name="Arial Rounded MT Bold" size="12.0" />
-                           </font>
-                        </JFXButton>
+                           <toggleGroup>
+                              <ToggleGroup fx:id="type_signal_chart" />
+                           </toggleGroup>
+                        </RadioButton>
+                        <RadioButton fx:id="radio_segmento" mnemonicParsing="false" onAction="#set_type_signal_chart" text="Segmento" toggleGroup="$type_signal_chart">
+                           <HBox.margin>
+                              <Insets left="5.0" right="5.0" />
+                           </HBox.margin>
+                        </RadioButton>
+                        <RadioButton fx:id="radio_tiempo" mnemonicParsing="false" onAction="#set_type_signal_chart" text="Tiempo" toggleGroup="$type_signal_chart">
+                           <HBox.margin>
+                              <Insets left="5.0" right="5.0" />
+                           </HBox.margin>
+                        </RadioButton>
                      </children>
                      <opaqueInsets>
                         <Insets />
@@ -334,19 +330,17 @@
                   </ScrollPane>
                   <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
                      <children>
-                        <RadioButton mnemonicParsing="false" text="Análisis General">
-                           <HBox.margin>
-                              <Insets left="5.0" right="5.0" />
-                           </HBox.margin>
+                        <JFXButton fx:id="btn_create_report" alignment="CENTER" buttonType="RAISED" onAction="#handleButtonReport" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Crear Reporte">
+                           <opaqueInsets>
+                              <Insets />
+                           </opaqueInsets>
+                           <cursor>
+                              <Cursor fx:constant="HAND" />
+                           </cursor>
                            <font>
                               <Font name="Arial Rounded MT Bold" size="12.0" />
                            </font>
-                        </RadioButton>
-                        <RadioButton mnemonicParsing="false" text="Dominio de las Frecuencia">
-                           <font>
-                              <Font name="Arial Rounded MT Bold" size="12.0" />
-                           </font>
-                        </RadioButton>
+                        </JFXButton>
                      </children>
                   </HBox>
                </children>
