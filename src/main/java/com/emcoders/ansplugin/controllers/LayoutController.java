@@ -102,7 +102,7 @@ public class LayoutController extends VBox {
 
                 Number x = times.get(i);
                 Number y_fci = points_fci.get(i);
-                Number y_points = points_signal.get(i);
+                //Number y_points = points_signal.get(i);
                 Double new_format_number = Double.parseDouble(format_number(x));
 
                 Platform.runLater(() -> {
@@ -123,6 +123,7 @@ public class LayoutController extends VBox {
             series.getData().add(new XYChart.Data(6,3));
 
         }
+
 
     }
 

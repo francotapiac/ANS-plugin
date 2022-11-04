@@ -1,7 +1,6 @@
 package com.emcoders.ansplugin.controllers;
 import com.emcoders.ansplugin.models.SegmentSignal;
 import javafx.scene.control.TableView;
-import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 
@@ -9,7 +8,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class DetailsController {
+public class ReportController {
     Workbook workbook;
     Sheet spreadsheet;
     Sheet signal;
@@ -26,8 +25,8 @@ public class DetailsController {
         for (int j = 0; j < table_detail.getColumns().size(); j++) {
             row.createCell(j).setCellValue(table_detail.getColumns().get(j).getText());
         }
-        row_signal.createCell(0).setCellValue("Time");
-        row_signal.createCell(1).setCellValue("FCI");
+        row_signal.createCell(0).setCellValue("FCI");
+        row_signal.createCell(1).setCellValue("Time");
 
         //Agregando valores de la tabla
         for (int i = 0; i < table_detail.getItems().size(); i++) {
@@ -56,14 +55,19 @@ public class DetailsController {
         }
     }
 
-    public  List<List<String>> read_xls(String path, boolean allCellHaveData){
+    public  List<List<String>> read_xls(String path, boolean allCellHaveData, int type_read){
         List<List<String>> sheetData = new ArrayList();
         int headerCount = 0;
 
         try (FileInputStream fis = new FileInputStream(path);
              Workbook wb = WorkbookFactory.create(fis)) {
-            System.out.println("acaaa");
-            Sheet sheet = wb.getSheetAt(0);
+            Sheet sheet;
+            if(type_read == 1){
+                sheet = wb.getSheetAt(0);
+            }
+            else{
+                sheet = wb.getSheetAt(1);
+            }
             for (int i = 0; i < sheet.getPhysicalNumberOfRows(); i++) {
                 Row row = sheet.getRow(i);
                 String value;
@@ -131,7 +135,6 @@ public class DetailsController {
                     }
                 }
                 sheetData.add(rowData);
-                System.out.println("SheetData: " + sheetData);
             }
         }
         catch (FileNotFoundException ex) {
@@ -143,4 +146,6 @@ public class DetailsController {
 
         return sheetData;
     }
+
+
 }

@@ -22,8 +22,7 @@ public class SegmentSignal {
     private Float rmssd;
     private Float sdsd;
     private Float pnn50;
-
-
+    private Float ratio_coherence;
 
     public String getId() {
         return id;
@@ -167,5 +166,13 @@ public class SegmentSignal {
 
     public void setPnn50(Float pnn50) {
         this.pnn50 = pnn50;
+    }
+
+    public Float getRatio_coherence() {
+        return ratio_coherence;
+    }
+
+    public void setRatio_coherence(Float ratio_coherence) {
+        this.ratio_coherence = ratio_coherence;
     }
 }

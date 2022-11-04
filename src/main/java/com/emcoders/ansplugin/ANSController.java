@@ -2,8 +2,8 @@ package com.emcoders.ansplugin;
 
 import com.emcoders.ansplugin.components.TagDialog;
 import com.emcoders.ansplugin.controllers.*;
+import com.emcoders.ansplugin.models.Emotion;
 import com.emcoders.ansplugin.models.SegmentSignal;
-import com.emcoders.ansplugin.models.Signal;
 import com.emcoders.scansembox.Events.AddSourceEvent;
 import com.emcoders.scansembox.Events.AddTagEvent;
 import com.emcoders.scansembox.Events.UpdateTagEvent;
@@ -16,9 +16,6 @@ import io.github.palexdev.materialfx.dialogs.MFXGenericDialog;
 import io.github.palexdev.materialfx.dialogs.MFXGenericDialogBuilder;
 import io.github.palexdev.materialfx.dialogs.MFXStageDialog;
 import io.github.palexdev.materialfx.enums.ScrimPriority;
-import javafx.animation.KeyFrame;
-import javafx.animation.ParallelTransition;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.collections.FXCollections;
@@ -26,32 +23,22 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.scene.chart.Axis;
-import javafx.scene.chart.CategoryAxis;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.image.ImageView;
 import javafx.stage.Modality;
-import javafx.stage.Stage;
 
 import java.io.*;
-import java.net.URL;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -60,10 +47,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
 
 import com.jfoenix.controls.JFXButton;
-import javafx.util.Duration;
 import javafx.util.Pair;
 
 
@@ -153,6 +138,11 @@ public class ANSController extends CanalModel {
     private Double lower_x_axis;
     private Double upper_x_axis;
     private int type_view_chart;
+
+    @FXML
+    private ComboBox<String> combobox_emotions;
+    @FXML
+    private JFXButton btn_set_emotion;
     private MFXGenericDialog dialogContent;
     private MFXStageDialog dialog;
 
@@ -169,7 +159,7 @@ public class ANSController extends CanalModel {
     LayoutController layoutController;
     VideoController videoController;
 
-    DetailsController detailsController;
+    ReportController reportController;
 
     Float millis;
     TimelineElement timelineElement;
@@ -227,11 +217,38 @@ public class ANSController extends CanalModel {
 
         this.pane_principal.toFront();
         this.tagDialog = new TagDialog();
-        this.detailsController = new DetailsController();
+        this.reportController = new ReportController();
         this.radio_general.setSelected(true);
+        ObservableList<String> items = FXCollections.observableArrayList();
+        items.addAll("Sorpresa", "Felicidad", "Miedo", "Enojo", "Tristeza");
+        this.combobox_emotions.getItems().addAll(items);
+        this.combobox_emotions.setOnAction(e -> disable_combobox_emotion());
+
+        combobox_emotions.valueProperty().addListener((ov, p1, p2) -> {
+            System.out.println("Nueva Selección: " + p2);
+            System.out.println("Vieja Selección: " + p1);
+        });
 
         //seek(13.6);
 
+    }
+
+    public void disable_combobox_emotion(){
+        if(this.combobox_emotions.getValue().equals(this.emotion_task)){
+            this.btn_set_emotion.setDisable(true);
+        }
+        else{
+            this.btn_set_emotion.setDisable(false);
+        }
+        try {
+            Emotion emotion_aux = new Emotion("");
+            InputStream url = ANSController.class.getResourceAsStream(emotion_aux.create_path(this.combobox_emotions.getValue()));
+            this.image_emotion.setImage(new Image(url));
+            this.image_emotion.setFitHeight(181);
+            this.image_emotion.setFitWidth(150);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void show_panels(){
@@ -292,7 +309,8 @@ public class ANSController extends CanalModel {
         String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
 
         // Instanciando controlador de señal
-        signalController = new SignalController(route_api);
+        signalController = new SignalController();
+        signalController.create_signal(route_api);
         this.path_signal = path;
         this.source_name = Paths.get(path).getFileName().toString();
         Platform.runLater(() -> {
@@ -367,23 +385,39 @@ public class ANSController extends CanalModel {
 
         //*********************** Tabla de detalles ***********************
         create_table_detail();
-        detailsController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
 
     }
 
     public TimelineElement loadProjectSource(String path) {
-        detailsController.read_xls(path + ".xls",true);
-        String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
-        // Instanciando controlador de señal
-        signalController = new SignalController(route_api);
-        this.path_signal = path;
-        this.source_name = Paths.get(path).getFileName().toString();
+        signalController = new SignalController();
+
+        String complete_path = path + ".xls";
+        if(complete_path != "" && path != null){
+            File file = new File(complete_path);
+            if(file.exists()){
+
+                // Instanciando controlador de señal
+                List<List<String>> signal_xls = reportController.read_xls(path + ".xls",true,0);
+                List<List<String>> time_line_xls = reportController.read_xls(path + ".xls",true,1);
+                System.out.println("time: \n " + time_line_xls);
+                System.out.println("Signal: \n " + signal_xls);
+                signalController.create_signal_excel(time_line_xls, signal_xls);
+            }
+
+        }
+        else{
+            String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
+
+            signalController.create_signal(route_api);
+            this.path_signal = path;
+            this.source_name = Paths.get(path).getFileName().toString();
+        }
         Platform.runLater(() -> {
             //update application thread
             openSourceThread(path);
             //addEventTag();
         });
-
         //Párametros de la línea de tiempo
         Double sourceLength = signalController.get_sourceLength();
         timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
@@ -653,6 +687,12 @@ public class ANSController extends CanalModel {
             this.lower_x_axis = signalController.getSignal().getStart_time_signal();
             this.upper_x_axis = Double.parseDouble(this.millis.toString())/1000;
         }
+        Platform.runLater(() -> {
+            //update application thread
+            xAxis.setLowerBound(lower_x_axis);
+            xAxis.setUpperBound(upper_x_axis);
+            xAxis.setAutoRanging(false);
+        });
 
     }
 
@@ -666,6 +706,7 @@ public class ANSController extends CanalModel {
         this.cardiac_detail.setCellValueFactory(new PropertyValueFactory<>("cardiac_coherence"));
         this.alert_detail.setCellValueFactory(new PropertyValueFactory<>("alert"));
 
+        TableColumn ratio_coherence = new TableColumn("Valor Coherencia");
         TableColumn vlf = new TableColumn("Muy Baja Frecuencia (VLF)");
         TableColumn lf = new TableColumn("Baja Frecuencia (LF)");
         TableColumn hf = new TableColumn("Alta Frecuencia (HF)");
@@ -679,6 +720,7 @@ public class ANSController extends CanalModel {
         TableColumn sdsd = new TableColumn("sdsd");
         //TableColumn pnn50 = new TableColumn("pnn50");
 
+        ratio_coherence.setCellValueFactory(new PropertyValueFactory<>("ratio_coherence"));
         vlf.setCellValueFactory(new PropertyValueFactory<>("vlf"));
         lf.setCellValueFactory(new PropertyValueFactory<>("lf"));
         hf.setCellValueFactory(new PropertyValueFactory<>("hf"));
@@ -693,7 +735,7 @@ public class ANSController extends CanalModel {
         //ddpnn50.setCellValueFactory(new PropertyValueFactory<>("pnn50"));
 
 
-        this.table_detail.getColumns().addAll(vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd);
+        this.table_detail.getColumns().addAll(ratio_coherence, vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd);
         ObservableList<SegmentSignal> list = FXCollections.observableArrayList();
         // Creando nuevo segmento de la señal
 
@@ -705,6 +747,7 @@ public class ANSController extends CanalModel {
             Float final_time = signalController.getSignal().getTime_line().get(i).getKey().getEnd_time();
             String emotion = signalController.getSignal().getTime_line().get(i).getKey().getEmotion().getName();
             String cardiac_coherence = signalController.getSignal().getTime_line().get(i).getKey().getDescription();
+            Float ratio_coherence_time = signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence();
             String alert = signalController.getSignal().getTime_line().get(i).getKey().getText_alert();
             segmentSignal.setId(contador.toString());
             segmentSignal.setInitial_time(initial_time);
@@ -712,8 +755,10 @@ public class ANSController extends CanalModel {
             segmentSignal.setEmotion(emotion);
             segmentSignal.setCardiac_coherence(cardiac_coherence);
             segmentSignal.setAlert(alert);
+            segmentSignal.setRatio_coherence(ratio_coherence_time);
             int pos_freq = 0;
             for(Pair<String, Float> element : this.signalController.getSignal().getTime_line().get(i).getValue().getFrequency_feature()){
+                System.out.println(element.getKey());
                 if(element.getKey().equals("vlf"))
                     segmentSignal.setVlf(element.getValue());
                 else if (element.getKey().equals("lf")) {segmentSignal.setLf(element.getValue());}
@@ -787,7 +832,7 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonReport(ActionEvent event) {
-        detailsController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
 
         //Creating a dialog
         Dialog<String> dialog = new Dialog<String>();
@@ -882,6 +927,16 @@ public class ANSController extends CanalModel {
         return this.dialog_charge;
     }
 
+
+
+    @FXML
+    void handleButtonSetEmotion(ActionEvent event) {
+        signalController.set_particular_emotion(this.millis, this.combobox_emotions.getValue());
+        emotion_task = signalController.getEmotion();
+        create_table_detail();
+        //reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+
+    }
 
     // Entrega un número con formato .0000
     public Float format_number(Double number){

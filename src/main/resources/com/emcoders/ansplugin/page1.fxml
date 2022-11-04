@@ -132,7 +132,7 @@
             <Separator prefHeight="19.0" prefWidth="190.0" />
             <ImageView fx:id="image_emotion" fitHeight="150.0" fitWidth="181.0" pickOnBounds="true" preserveRatio="true" />
             <Separator prefHeight="19.0" prefWidth="190.0" />
-            <JFXButton fx:id="btn_set_emotion" buttonType="RAISED" onAction="#handleButtonSignal" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Modificar emoción">
+            <JFXButton fx:id="btn_set_emotion" buttonType="RAISED" onAction="#handleButtonSetEmotion" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Modificar emoción">
                <opaqueInsets>
                   <Insets />
                </opaqueInsets>

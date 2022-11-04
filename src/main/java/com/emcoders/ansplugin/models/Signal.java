@@ -30,16 +30,18 @@ public class Signal {
 
     private String emotion_image_path;
 
+    public Signal(){
+        this.time_line = new ArrayList<>();
+        this.emotions_signal = new ArrayList<>();
+        this.cant_emotions_signal = new ArrayList<>();
+    }
     public Signal(String path_api){
         //get_signal( System.getProperty("user.dir")  + "\\signals\\ecg.csv");
         JSONArray dataObject = get_json_time_line(path_api);
         this.time_line = create_time_line_signal(dataObject);       // Creando línea de tiempo de la señal
-        System.out.println("1");
         calculate_length_signal(time_line);                             // Obteniendo tiempo final de la señal
         create_signal_time(dataObject);                             //Creando arreglos con puntos de la señal y tiempo
-        System.out.println("2");
         get_general_data();                                         //Obteniendo datos generales de la señal
-        System.out.println("3");
     }
 
     /*
@@ -339,5 +341,65 @@ public class Signal {
 
     public List<Double> getTimes_points() {
         return times_points;
+    }
+
+    public void setFci(List<Double> fci) {
+        this.fci = fci;
+    }
+
+    public void setRr_peaks(List<Double> rr_peaks) {
+        this.rr_peaks = rr_peaks;
+    }
+
+    public void setTimes_fci(List<Double> times_fci) {
+        this.times_fci = times_fci;
+    }
+
+    public void setSignal_points(List<Double> signal_points) {
+        this.signal_points = signal_points;
+    }
+
+    public void setTimes_points(List<Double> times_points) {
+        this.times_points = times_points;
+    }
+
+    public void setTime_line(List<Pair<Alert, Feature>> time_line) {
+        this.time_line = time_line;
+    }
+
+    public void setStart_time_signal(double start_time_signal) {
+        this.start_time_signal = start_time_signal;
+    }
+
+    public void setEnd_time_signal(double end_time_signal) {
+        this.end_time_signal = end_time_signal;
+    }
+
+    public void setCount_alerts(Integer count_alerts) {
+        this.count_alerts = count_alerts;
+    }
+
+    public List<String> getEmotions_signal() {
+        return emotions_signal;
+    }
+
+    public void setEmotions_signal(List<String> emotions_signal) {
+        this.emotions_signal = emotions_signal;
+    }
+
+    public List<Integer> getCant_emotions_signal() {
+        return cant_emotions_signal;
+    }
+
+    public void setCant_emotions_signal(List<Integer> cant_emotions_signal) {
+        this.cant_emotions_signal = cant_emotions_signal;
+    }
+
+    public void setPredominant_emotion(String predominant_emotion) {
+        this.predominant_emotion = predominant_emotion;
+    }
+
+    public void setEmotion_image_path(String emotion_image_path) {
+        this.emotion_image_path = emotion_image_path;
     }
 }

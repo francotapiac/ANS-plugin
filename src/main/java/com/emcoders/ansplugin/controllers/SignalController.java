@@ -1,7 +1,11 @@
 package com.emcoders.ansplugin.controllers;
 
+import com.emcoders.ansplugin.models.Alert;
 import com.emcoders.ansplugin.models.Emotion;
+import com.emcoders.ansplugin.models.Feature;
 import com.emcoders.ansplugin.models.Signal;
+import com.emcoders.scansembox.Utils.TimelineElement;
+import javafx.util.Pair;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,17 +22,77 @@ public class SignalController {
     private List<Double> signal_points_fci;
 
 
-    public SignalController(String path){
-
-        create_signal(path);
-    }
 
     public void create_signal(String path){
         this.signal = new Signal(path);
         create_points_signal_fci();
     }
 
+    public void create_signal_excel(List<List<String>> data_signal, List<List<String>> signal_xls){
+        this.signal = new Signal();
+        create_time_line_excel(data_signal);
+        signal.calculate_length_signal(signal.getTime_line());         // Obteniendo tiempo final de la señal
+        create_signal_time(signal_xls);                             //Creando arreglos con puntos de la señal y tiempo
+        signal.get_general_data();                                    //Obteniendo datos generales de la señal
+    }
 
+        public void create_time_line_excel(List<List<String>> data_signal){
+        String[] list_names_times_features = {"vlf","lf","hf", "lf-hf","fft_total"};
+        String[] list_names_freq_features = {"hr_mean","hr_min","hr_max", "sdnn","rmssd","sdsd"};
+        for(int i = 1; i < data_signal.size(); i++){
+
+            Float start_time = Float.parseFloat(data_signal.get(i).get(1));
+            Float end_time = Float.parseFloat(data_signal.get(i).get(2));
+            String name_emotion = data_signal.get(i).get(3);
+            Float ratio_coherence = Float.parseFloat(data_signal.get(i).get(6));
+            Emotion emotion = new Emotion(name_emotion);
+            List<Pair<String, Float>> times_features = new ArrayList<>();
+            List<Pair<String, Float>> freq_features = new ArrayList<>();
+            int count_times = 0;
+            int count_freqs = 0;
+            for(int j = 7; j < data_signal.get(i).size(); j++){
+                if(j <= 11){
+                    Pair p = new Pair(list_names_times_features[count_freqs], Float.parseFloat(data_signal.get(i).get(j)));
+                    count_freqs++;
+                    freq_features.add(p);
+                }
+                else{
+                    Pair p = new Pair(list_names_freq_features[count_times], Float.parseFloat(data_signal.get(i).get(j)));
+                    count_times++;
+                    times_features.add(p);
+
+                }
+
+            }
+            Feature feature = new Feature(times_features, freq_features, start_time, end_time);
+            Alert alert = new Alert(ratio_coherence, "", emotion, start_time, end_time);
+
+            //Contando cantidad de emociones y agregando a lista
+            signal.append_emotions_signal(name_emotion);
+
+            //Agregando características y alerta del segmento de la señla a la línea de tiempo
+            Pair p = new Pair(alert, feature);
+            List<Pair<Alert,Feature>> time_line = signal.getTime_line();
+            time_line.add(p);
+            signal.setTime_line(time_line);
+        }
+    }
+
+    public void create_signal_time(List<List<String>> signal_xls){
+        for(int i = 1; i< signal_xls.size(); i++){
+            List<Double> times_fci = new ArrayList<>();
+            List<Double> fci = new ArrayList<>();
+
+            times_fci = this.signal.getTimes_fci();
+            times_fci.add(Double.parseDouble(signal_xls.get(i).get(1)));
+            signal.setTimes_fci(times_fci);
+
+            fci = this.signal.getFci();
+            fci.add(Double.parseDouble(signal_xls.get(i).get(0)));
+            signal.setFci(fci);
+
+        }
+    }
 
     public Double get_sourceLength(){
         return this.signal.getEnd_time_signal();
@@ -36,9 +100,7 @@ public class SignalController {
 
 
     public void get_particular_data(Float time_comparate){
-        System.out.println(time_comparate);
         for(int i = 0; i < signal.getTime_line().size(); i++){
-            System.out.println(i);
             Float parcial_start_time = signal.getTime_line().get(i).getKey().getStart_time()*1000;
             Float parcial_end_time = signal.getTime_line().get(i).getKey().getEnd_time()*1000;
             if(time_comparate >= parcial_start_time && time_comparate < parcial_end_time){
@@ -49,6 +111,20 @@ public class SignalController {
                 this.type_alert = signal.getTime_line().get(i).getKey().getType_alert();
                 this.cardiac_coherence_description = signal.getTime_line().get(i).getKey().getDescription();
                 Emotion emotion_aux = new Emotion("");
+                this.path_image_emotion = emotion_aux.create_path(this.emotion);
+                break;
+            }
+        }
+    }
+
+    public  void set_particular_emotion(Float time_comparate, String new_emotion){
+        for(int i = 0; i < signal.getTime_line().size(); i++){
+            Float parcial_start_time = signal.getTime_line().get(i).getKey().getStart_time()*1000;
+            Float parcial_end_time = signal.getTime_line().get(i).getKey().getEnd_time()*1000;
+            if(time_comparate >= parcial_start_time && time_comparate < parcial_end_time){
+                this.emotion = new_emotion;
+                Emotion emotion_aux = new Emotion(new_emotion);
+                signal.getTime_line().get(i).getKey().setEmotion(emotion_aux);
                 this.path_image_emotion = emotion_aux.create_path(this.emotion);
                 break;
             }
