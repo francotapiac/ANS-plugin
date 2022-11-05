@@ -143,6 +143,62 @@ public class SignalController {
         }
     }
 
+    //Cambiando las alertas manuales en tabla
+    public void set_manual_alert(Double start_time_select_line, Double end_time_select_line){
+        for(int i = 0; i < signal.getTime_line().size(); i++){
+            Float start_time_comparate = Float.parseFloat(start_time_select_line.toString());
+            Float end_time_comparate = Float.parseFloat(end_time_select_line.toString());
+            Float parcial_start_time = signal.getTime_line().get(i).getKey().getStart_time()*1000;
+            Float parcial_end_time = signal.getTime_line().get(i).getKey().getEnd_time()*1000;
+
+            System.out.println("compara: [" + start_time_comparate + "," + end_time_comparate + "]");
+            System.out.println("partial: [" + parcial_start_time + "," + parcial_end_time + "]");
+
+            // Tamaño de alerta manual igual o mayor al tamaño del segmento
+            if(start_time_comparate <= parcial_start_time && end_time_comparate >= parcial_end_time){
+                //Alerta completa
+                signal.getTime_line().get(i).getKey().setText_alert("Alerta Manual");
+                signal.getTime_line().get(i).getKey().setType_alert(1);
+                signal.getTime_line().get(i).getKey().setDescription("Alerta Manual en segmento completo");
+            }
+            //Si alerta manual se encuentra dentro del segmento
+            else if (start_time_comparate >= parcial_start_time && end_time_comparate <= parcial_end_time) {
+                //Si segmento de alerta manual es igual al inicio pero menor al final
+                if (start_time_comparate == parcial_start_time && end_time_comparate < parcial_end_time) {
+                    signal.getTime_line().get(i).getKey().setText_alert("Alerta Manual Parcial");
+                    signal.getTime_line().get(i).getKey().setType_alert(2);
+                    signal.getTime_line().get(i).getKey().setDescription("Alerta Manual con segmento incompleto al inicio");
+                }
+                //Si segmento de alerta manual es mayor al inicio pero igual al final
+                else if (start_time_comparate > parcial_start_time && end_time_comparate == parcial_end_time) {
+                    signal.getTime_line().get(i).getKey().setText_alert("Alerta Manual Parcial");
+                    signal.getTime_line().get(i).getKey().setType_alert(2);
+                    signal.getTime_line().get(i).getKey().setDescription("Alerta Manual con segmento incompleto al final");
+                }
+                //Si segmento de alerta manual es menor al segmento de la línea de tiempo
+                else if (start_time_comparate > parcial_start_time && end_time_comparate < parcial_end_time) {
+                    signal.getTime_line().get(i).getKey().setText_alert("Alerta Manual Parcial");
+                    signal.getTime_line().get(i).getKey().setType_alert(2);
+                    signal.getTime_line().get(i).getKey().setDescription("Alerta Manual con segmento incompleto");
+                }
+            }
+            //Si parte de la alerta manual se encuentra dentro del segmento
+            //Si cubre una parte del segmento inicial, pero no el total
+            else if(start_time_comparate < parcial_start_time && end_time_comparate < parcial_end_time && end_time_comparate > parcial_start_time){
+                signal.getTime_line().get(i).getKey().setText_alert("Alerta Manual Parcial");
+                signal.getTime_line().get(i).getKey().setType_alert(2);
+                signal.getTime_line().get(i).getKey().setDescription("Alerta Manual con segmento que cubre parte del inicio");
+                //Alerta incompleta
+            }
+            //Si cubre parte del segmento final, pero no el total
+            else if (start_time_comparate > parcial_start_time && start_time_comparate < parcial_end_time && end_time_comparate > parcial_end_time) {
+                signal.getTime_line().get(i).getKey().setText_alert("Alerta Manual Parcial");
+                signal.getTime_line().get(i).getKey().setType_alert(2);
+                signal.getTime_line().get(i).getKey().setDescription("Alerta Manual con segmento que cubre parte del final");
+            }
+        }
+    }
+
     public List<Double> get_pointsSignal(){
         return this.signal.getPoints_signal();
     }

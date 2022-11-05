@@ -384,14 +384,14 @@ public class ANSController extends CanalModel {
         this.chart.setAnimated(false);
 
         //*********************** Tabla de detalles ***********************
-        create_table_detail();
+        create_table_detail(true);
         reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
 
     }
 
     public TimelineElement loadProjectSource(String path) {
         signalController = new SignalController();
-
+        this.source_name = Paths.get(path).getFileName().toString();
         String complete_path = path + ".xls";
         if(complete_path != "" && path != null){
             File file = new File(complete_path);
@@ -698,44 +698,48 @@ public class ANSController extends CanalModel {
 
     // Crear tabla con detalles de cada alerta
     @FXML
-    void create_table_detail(){
-        this.segment_detail.setCellValueFactory(new PropertyValueFactory<>("id"));
-        this.initial_time_detail.setCellValueFactory(new PropertyValueFactory<>("initial_time"));
-        this.final_time_detail.setCellValueFactory(new PropertyValueFactory<>("final_time"));
-        this.emotion_detail.setCellValueFactory(new PropertyValueFactory<>("emotion"));
-        this.cardiac_detail.setCellValueFactory(new PropertyValueFactory<>("cardiac_coherence"));
-        this.alert_detail.setCellValueFactory(new PropertyValueFactory<>("alert"));
+    void create_table_detail(boolean first_instance){
+        if(first_instance) {
+            this.segment_detail.setCellValueFactory(new PropertyValueFactory<>("id"));
+            this.initial_time_detail.setCellValueFactory(new PropertyValueFactory<>("initial_time"));
+            this.final_time_detail.setCellValueFactory(new PropertyValueFactory<>("final_time"));
+            this.emotion_detail.setCellValueFactory(new PropertyValueFactory<>("emotion"));
+            this.cardiac_detail.setCellValueFactory(new PropertyValueFactory<>("cardiac_coherence"));
+            this.alert_detail.setCellValueFactory(new PropertyValueFactory<>("alert"));
 
-        TableColumn ratio_coherence = new TableColumn("Valor Coherencia");
-        TableColumn vlf = new TableColumn("Muy Baja Frecuencia (VLF)");
-        TableColumn lf = new TableColumn("Baja Frecuencia (LF)");
-        TableColumn hf = new TableColumn("Alta Frecuencia (HF)");
-        TableColumn lf_hf = new TableColumn("LF/HF");
-        TableColumn fft_total = new TableColumn("FFT Total");
-        TableColumn hr_mean = new TableColumn("hr_mean");
-        TableColumn hr_min = new TableColumn("hr_min");
-        TableColumn hr_max = new TableColumn("hr_max");
-        TableColumn sdnn = new TableColumn("sdnn");
-        TableColumn rmssd = new TableColumn("rmssd");
-        TableColumn sdsd = new TableColumn("sdsd");
-        //TableColumn pnn50 = new TableColumn("pnn50");
+            TableColumn ratio_coherence = new TableColumn("Valor Coherencia");
+            TableColumn vlf = new TableColumn("Muy Baja Frecuencia (VLF)");
+            TableColumn lf = new TableColumn("Baja Frecuencia (LF)");
+            TableColumn hf = new TableColumn("Alta Frecuencia (HF)");
+            TableColumn lf_hf = new TableColumn("LF/HF");
+            TableColumn fft_total = new TableColumn("FFT Total");
+            TableColumn hr_mean = new TableColumn("hr_mean");
+            TableColumn hr_min = new TableColumn("hr_min");
+            TableColumn hr_max = new TableColumn("hr_max");
+            TableColumn sdnn = new TableColumn("sdnn");
+            TableColumn rmssd = new TableColumn("rmssd");
+            TableColumn sdsd = new TableColumn("sdsd");
+            //TableColumn pnn50 = new TableColumn("pnn50");
 
-        ratio_coherence.setCellValueFactory(new PropertyValueFactory<>("ratio_coherence"));
-        vlf.setCellValueFactory(new PropertyValueFactory<>("vlf"));
-        lf.setCellValueFactory(new PropertyValueFactory<>("lf"));
-        hf.setCellValueFactory(new PropertyValueFactory<>("hf"));
-        lf_hf.setCellValueFactory(new PropertyValueFactory<>("lf_hf"));
-        fft_total.setCellValueFactory(new PropertyValueFactory<>("fft_total"));
-        hr_mean.setCellValueFactory(new PropertyValueFactory<>("hr_mean"));
-        hr_min.setCellValueFactory(new PropertyValueFactory<>("hr_min"));
-        hr_max.setCellValueFactory(new PropertyValueFactory<>("hr_max"));
-        sdnn.setCellValueFactory(new PropertyValueFactory<>("sdnn"));
-        rmssd.setCellValueFactory(new PropertyValueFactory<>("rmssd"));
-        sdsd.setCellValueFactory(new PropertyValueFactory<>("sdsd"));
-        //ddpnn50.setCellValueFactory(new PropertyValueFactory<>("pnn50"));
+            ratio_coherence.setCellValueFactory(new PropertyValueFactory<>("ratio_coherence"));
+            vlf.setCellValueFactory(new PropertyValueFactory<>("vlf"));
+            lf.setCellValueFactory(new PropertyValueFactory<>("lf"));
+            hf.setCellValueFactory(new PropertyValueFactory<>("hf"));
+            lf_hf.setCellValueFactory(new PropertyValueFactory<>("lf_hf"));
+            fft_total.setCellValueFactory(new PropertyValueFactory<>("fft_total"));
+            hr_mean.setCellValueFactory(new PropertyValueFactory<>("hr_mean"));
+            hr_min.setCellValueFactory(new PropertyValueFactory<>("hr_min"));
+            hr_max.setCellValueFactory(new PropertyValueFactory<>("hr_max"));
+            sdnn.setCellValueFactory(new PropertyValueFactory<>("sdnn"));
+            rmssd.setCellValueFactory(new PropertyValueFactory<>("rmssd"));
+            sdsd.setCellValueFactory(new PropertyValueFactory<>("sdsd"));
+            //ddpnn50.setCellValueFactory(new PropertyValueFactory<>("pnn50"));
 
+            this.table_detail.getColumns().addAll(ratio_coherence, vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd);
+        }
 
-        this.table_detail.getColumns().addAll(ratio_coherence, vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd);
+        this.table_detail.getItems().clear();
+
         ObservableList<SegmentSignal> list = FXCollections.observableArrayList();
         // Creando nuevo segmento de la señal
 
@@ -758,7 +762,6 @@ public class ANSController extends CanalModel {
             segmentSignal.setRatio_coherence(ratio_coherence_time);
             int pos_freq = 0;
             for(Pair<String, Float> element : this.signalController.getSignal().getTime_line().get(i).getValue().getFrequency_feature()){
-                System.out.println(element.getKey());
                 if(element.getKey().equals("vlf"))
                     segmentSignal.setVlf(element.getValue());
                 else if (element.getKey().equals("lf")) {segmentSignal.setLf(element.getValue());}
@@ -793,14 +796,15 @@ public class ANSController extends CanalModel {
         alert.setText("Coherencia Cardíaca: " + alert_task );
         emotion.setText("Emoción: " + emotion_task);
         cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
-        initial_time.setText("Tiempo inicial: " + initial_time_task);
-        final_time.setText("Tiempo final: " +  final_time_task);
+        initial_time.setText("Tiempo inicial: " + format_number(Double.parseDouble(initial_time_task))/1000 + " s");
+        final_time.setText("Tiempo final: " +   format_number(Double.parseDouble(final_time_task))/1000 + " s");
         image_emotion.setImage(new Image(path_image_emotion));
         this.image_emotion.setFitHeight(181);
         this.image_emotion.setFitWidth(150);
 
     }
 
+    //Modifica colores y tag de la línea de tiempo
     private void addEventTag(){
         for(Integer i = 1; i < signalController.getSignal().getTime_line().size(); i++) {
             if (signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence() < 1) {
@@ -882,20 +886,30 @@ public class ANSController extends CanalModel {
                 Map.entry(new MFXButton("Añadir"), event -> {
 
                         if(code.getText().length() == 0 || desc.getText().length() == 0) return;
+
                         TimelineTag timelineTag = new TimelineTag(this.timelineElement.getSelectionX(),
                                 this.timelineElement.getSelectionWidth(),
                                 code.getText(),
                                 desc.getText(),
                                 signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionX() / this.timelineElement.getWidth(),
                                 signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionWidth() / this.timelineElement.getWidth(),
-                                Color.RED,
+                                Color.ORANGE,
                                 this.getName(),
                                 Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString());
                         this.timelineElement.getChildren().add(timelineTag);
                         this.getTags().add(timelineTag);
                         root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTag.getCode(),
                                 timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS()));
-                        dialog.close();
+
+                    Double start_time = signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionX() / this.timelineElement.getWidth();
+                    Double end_time = start_time + signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionWidth() / this.timelineElement.getWidth();
+                    // Seteando valores de alerta
+                    this.signalController.set_manual_alert(start_time, end_time );
+                    //Modificando tabla con nueva alerta en segmento específico
+                    create_table_detail(false);
+                    reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+
+                    dialog.close();
 
                 }), Map.entry( new MFXButton("Cancelar"), event -> {
                     dialog.close();
@@ -931,11 +945,20 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonSetEmotion(ActionEvent event) {
+        //Obteniendo valores específicos del segmento seleccionado de la señal con la nueva emoción
         signalController.set_particular_emotion(this.millis, this.combobox_emotions.getValue());
-        emotion_task = signalController.getEmotion();
-        create_table_detail();
-        //reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
 
+        //Modificando tabla con nueva emoción en segmento específico
+        create_table_detail(false);
+        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+
+        //Modificando Labels
+        emotion_task = signalController.getEmotion();
+        this.emotion.setText(this.emotion_task);
+        this.emotion_abstract.setText(this.emotion_task);
+
+        //Desactivando botón para la emoción seleccionada en el segmento en específico
+        this.btn_set_emotion.setDisable(true);
     }
 
     // Entrega un número con formato .0000

@@ -27,7 +27,7 @@ public class Alert extends CardiacCoherence{
 
     public String create_alert(float ratio_coherence){
         if(ratio_coherence < 1.0)
-            return "Alerta";
+            return "Alerta Automática";
         return "";
     }
 
