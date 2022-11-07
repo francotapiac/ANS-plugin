@@ -41,12 +41,10 @@ import javafx.stage.Modality;
 import java.io.*;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.FutureTask;
 
 import com.jfoenix.controls.JFXButton;
 import javafx.util.Pair;
@@ -79,9 +77,9 @@ public class ANSController extends CanalModel {
     @FXML
     private Label cardiac_coherence;
     @FXML
-    private Label emotion;
+    private Label cant_segmento_panel;
     @FXML
-    private Label initial_time;
+    private Label segmento_panel;
     @FXML
     private Label final_time;
 
@@ -163,6 +161,7 @@ public class ANSController extends CanalModel {
 
     Float millis;
     TimelineElement timelineElement;
+    Integer segment_time;
     String alert_task;
     String emotion_task;
     String cardiac_coherence_task;
@@ -229,6 +228,12 @@ public class ANSController extends CanalModel {
             System.out.println("Vieja Selección: " + p1);
         });
 
+        //Se desctivan botones
+        this.btn_set_emotion.setDisable(true);
+        this.btn_create_event.setDisable(true);
+        this.combobox_emotions.setDisable(true);
+
+
         //seek(13.6);
 
     }
@@ -269,9 +274,15 @@ public class ANSController extends CanalModel {
     }
 
     public void seek(double millis) {
+        //Se activan botones
+        this.btn_set_emotion.setDisable(false);
+        this.btn_create_event.setDisable(false);
+        this.combobox_emotions.setDisable(false);
+
         this.millis = format_number(millis);
         signalController.get_particular_data(format_number(millis));
         alert_task = signalController.getCardiac_coherence_description();
+        segment_time = signalController.getN_segment();
         emotion_task = signalController.getEmotion();
         cardiac_coherence_task = signalController.getRatio_coherence().toString();
         initial_time_task = signalController.getPartial_start_time().toString();
@@ -313,10 +324,12 @@ public class ANSController extends CanalModel {
         signalController.create_signal(route_api);
         this.path_signal = path;
         this.source_name = Paths.get(path).getFileName().toString();
+
         Platform.runLater(() -> {
             //update application thread
             openSourceThread(path);
             addEventTag();
+           // dialog.close();
         });
 
         //Párametros de la línea de tiempo
@@ -331,6 +344,44 @@ public class ANSController extends CanalModel {
 
     }
 
+    public void dialog_charge(){
+        MFXTextField code = new MFXTextField();
+        code.setFloatingText("Cargando señal...");
+        MFXTextField desc = new MFXTextField();
+        desc.setFloatingText("Ingrese una descripción del evento");
+
+        VBox container = new VBox();
+        container.setAlignment(Pos.CENTER);
+        container.getChildren().addAll(code, desc);
+
+        dialogContent = MFXGenericDialogBuilder.build()
+                .setContent(container)
+                .setShowMinimize(false)
+                .setShowAlwaysOnTop(false)
+                .setShowClose(false)
+                .setHeaderText("Cargando Señal...")
+                .get();
+
+        dialog = MFXGenericDialogBuilder.build(dialogContent)
+                .toStageDialogBuilder()
+                .initOwner(root.getScene().getWindow())
+                .initModality(Modality.APPLICATION_MODAL)
+                .setDraggable(true)
+                .setTitle("Cargando Señal...")
+                .setOwnerNode((BorderPane) root.getScene().getRoot())
+                .setScrimPriority(ScrimPriority.WINDOW)
+                .setScrimOwner(true)
+                .get();
+
+        ProgressIndicator pi;
+        dialogContent.addActions(
+                Map.entry(pi = new ProgressIndicator(), event -> {
+                    pi.setProgress(-1.0f);
+                })
+        );
+        dialog.show();
+    }
+
     public void openSourceThread(String path){
 
 
@@ -339,7 +390,7 @@ public class ANSController extends CanalModel {
         layoutController.initialize_panes(signalController);
 
         //*********************** Emoción de señal ***********************
-        this.emotion_abstract.setText(signalController.getSignal().getPredominant_emotion().toString());
+        this.emotion_abstract.setText("Emoción general: " + signalController.getSignal().getPredominant_emotion().toString());
         try {
             InputStream url = ANSController.class.getResourceAsStream(signalController.getSignal().getEmotion_image_path());
             this.image_emotion.setImage(new Image(url));
@@ -351,9 +402,11 @@ public class ANSController extends CanalModel {
 
         //*********************** Análisis de señal ***********************
         this.alert.setText("N° Alertas: " + signalController.getSignal().getCount_alerts().toString());
-        this.emotion.setText("Emoción: " + signalController.getSignal().getPredominant_emotion());
-        this.initial_time.setText("Tiempo inicial: " + format_number(signalController.getSignal().getStart_time_signal())/1000 + " s");
-        this.final_time.setText("Tiempo final: " + format_number(signalController.getSignal().getEnd_time_signal()) /1000+ " s");
+        this.cant_segmento_panel.setText("Cantidad de Segmentos: " + signalController.getSignal().getTime_line().size());
+        Float initial_seg = format_number(signalController.getSignal().getStart_time_signal());
+        Float final_seg = format_number(signalController.getSignal().getEnd_time_signal());
+        segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
+        cardiac_coherence.setText("Nombre de archivo: " + Paths.get(path).getFileName().toString());
 
         //*********************** Vídeo ***********************
         //this.path_video = "C:\\Users\\Franco\\Desktop\\Escritorio\\Universidad\\Memoria\\ANS-plugin\\audio.wav";
@@ -365,7 +418,6 @@ public class ANSController extends CanalModel {
 
         //*********************** Gráfico ***********************
         //Modificando atributos de gráfico
-        this.chart.lookup(".chart-plot-background").setStyle("-fx-background-color: transparent;");
         this.chart.setTitle("Frecuencia Cardíaca Instantánea en el Tiempo");
         this.chart.getXAxis().setLabel("Tiempo (s)");
         this.chart.getYAxis().setLabel("Frecuencia Cardíaca (Hz)");
@@ -374,14 +426,18 @@ public class ANSController extends CanalModel {
         //Inicializando gráfico
         //this.chart.getData().addAll(layoutController.getSeries_fci(), layoutController.getSeries_points());
         this.chart.getData().addAll(layoutController.getSeries_fci());
-        yAxis.setLowerBound(78);
-        yAxis.setUpperBound(82);
+        Double min_fci = signalController.getSignal().getMin_max_fci_point().getKey();
+        Double max_fci = signalController.getSignal().getMin_max_fci_point().getValue();
+        yAxis.setLowerBound(min_fci - 1);
+        yAxis.setUpperBound(max_fci + 1);
         xAxis.setLowerBound(signalController.getSignal().getStart_time_signal());
         xAxis.setUpperBound(signalController.getSignal().getEnd_time_signal());
-
+        this.chart.lookup(".chart-plot-background").setStyle("-fx-background-color: transparent");
         this.type_view_chart = 1;
         this.chart.getYAxis().setAutoRanging(false);
-        this.chart.setAnimated(false);
+        this.chart.setAnimated(true);
+
+
 
         //*********************** Tabla de detalles ***********************
         create_table_detail(true);
@@ -393,10 +449,9 @@ public class ANSController extends CanalModel {
         signalController = new SignalController();
         this.source_name = Paths.get(path).getFileName().toString();
         String complete_path = path + ".xls";
-        if(complete_path != "" && path != null){
+        if(complete_path != "" && complete_path != null ){
             File file = new File(complete_path);
             if(file.exists()){
-
                 // Instanciando controlador de señal
                 List<List<String>> signal_xls = reportController.read_xls(path + ".xls",true,0);
                 List<List<String>> time_line_xls = reportController.read_xls(path + ".xls",true,1);
@@ -404,15 +459,14 @@ public class ANSController extends CanalModel {
                 System.out.println("Signal: \n " + signal_xls);
                 signalController.create_signal_excel(time_line_xls, signal_xls);
             }
-
+            else{
+                String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
+                signalController.create_signal(route_api);
+                this.path_signal = path;
+                this.source_name = Paths.get(path).getFileName().toString();
+            }
         }
-        else{
-            String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
 
-            signalController.create_signal(route_api);
-            this.path_signal = path;
-            this.source_name = Paths.get(path).getFileName().toString();
-        }
         Platform.runLater(() -> {
             //update application thread
             openSourceThread(path);
@@ -427,12 +481,11 @@ public class ANSController extends CanalModel {
 
     public void loadProjectTag(String source, String code, String desc, double initTimeInMS, double lengthInMS) {
         Color color;
-        if(Objects.equals(code.split("")[0], "Evento")){
-            color = Color.RED;
-        }else{
-            color = Color.TEAL;
-        }
-        color = Color.RED;
+        signalController.get_particular_data_charge_line_time(initTimeInMS);
+        if (signalController.getRatio_coherence() <= 0.5) color = Color.RED;
+         else color = Color.ORANGE;
+
+
         TimelineTag timelineTag = new TimelineTag(this.timelineElement.getWidth() * initTimeInMS / (signalController.getSignal().getEnd_time_signal()*1000),
                 this.timelineElement.getWidth() * lengthInMS / (signalController.getSignal().getEnd_time_signal()*1000),
                 code,
@@ -565,6 +618,7 @@ public class ANSController extends CanalModel {
         this.detail_panel.setLayoutX(this.pane_principal.getLayoutX());
         this.detail_panel.setLayoutY(this.pane_principal.getLayoutY());
         this.detail_panel.toFront();
+        this.pane_principal.toBack();
 
     }
 
@@ -575,6 +629,8 @@ public class ANSController extends CanalModel {
         this.pane_principal.setLayoutX(this.pane_principal.getLayoutX());
         this.pane_principal.setLayoutY(this.pane_principal.getLayoutY());
         this.pane_principal.toFront();
+        this.detail_panel.toBack();
+
     }
 
     @FXML
@@ -590,7 +646,7 @@ public class ANSController extends CanalModel {
 
                         Platform.runLater(() -> {
                             Double p = (Double)timelineElement.getSourceLength();
-                            emotion.setText(p.toString());
+                            //emotion.setText(p.toString());
                         });
 
                         latch.await();
@@ -793,11 +849,12 @@ public class ANSController extends CanalModel {
 
     public void set_data_abstact(double millis){
 
-        alert.setText("Coherencia Cardíaca: " + alert_task );
-        emotion.setText("Emoción: " + emotion_task);
+        alert.setText("Descripción: " + alert_task );
+        cant_segmento_panel.setText("N° Segmento: " + segment_time);
         cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
-        initial_time.setText("Tiempo inicial: " + format_number(Double.parseDouble(initial_time_task))/1000 + " s");
-        final_time.setText("Tiempo final: " +   format_number(Double.parseDouble(final_time_task))/1000 + " s");
+        Float initial_seg =  format_number(Double.parseDouble(initial_time_task))/1000;
+        Float final_seg = format_number(Double.parseDouble(final_time_task))/1000;
+        segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
         image_emotion.setImage(new Image(path_image_emotion));
         this.image_emotion.setFitHeight(181);
         this.image_emotion.setFitWidth(150);
@@ -812,9 +869,12 @@ public class ANSController extends CanalModel {
                 double partial_final_time = signalController.getSignal().getTime_line().get(i).getKey().getEnd_time();
                 double partial_ratio_coherence = signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence();
                 Color color;
-                if (partial_ratio_coherence <= 0.5)
+                if (partial_ratio_coherence <= 0.5 && i != 0)
                     color = Color.RED;
-                else color = Color.ORANGE;
+                else if (i == 0) {
+                    color = Color.LIGHTGRAY;
+
+                } else color = Color.ORANGE;
 
                 TimelineTag timelineTag = new TimelineTag(
                         this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
@@ -842,12 +902,13 @@ public class ANSController extends CanalModel {
         Dialog<String> dialog = new Dialog<String>();
         //Setting the title
         dialog.setTitle("Información");
-        ButtonType type = new ButtonType("Ok", ButtonBar.ButtonData.OK_DONE);
+        ButtonType type = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
         //Setting the content of the dialog
-        dialog.setContentText("Se ha creado el reporte en el directorio: " + this.getProjectDir() + " \n con el nombre: " + this.source_name + ".xls");
+        dialog.setContentText("Se ha creado el reporte en el directorio: " + this.getProjectDir() + " \n Con el nombre: " + this.source_name + ".xls");
         //Adding buttons to the dialog pane
         dialog.getDialogPane().getButtonTypes().add(type);
         dialog.showAndWait();
+
 
     }
 
@@ -893,7 +954,7 @@ public class ANSController extends CanalModel {
                                 desc.getText(),
                                 signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionX() / this.timelineElement.getWidth(),
                                 signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionWidth() / this.timelineElement.getWidth(),
-                                Color.ORANGE,
+                                Color.LIGHTBLUE,
                                 this.getName(),
                                 Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString());
                         this.timelineElement.getChildren().add(timelineTag);
@@ -954,7 +1015,6 @@ public class ANSController extends CanalModel {
 
         //Modificando Labels
         emotion_task = signalController.getEmotion();
-        this.emotion.setText(this.emotion_task);
         this.emotion_abstract.setText(this.emotion_task);
 
         //Desactivando botón para la emoción seleccionada en el segmento en específico
@@ -963,7 +1023,7 @@ public class ANSController extends CanalModel {
 
     // Entrega un número con formato .0000
     public Float format_number(Double number){
-        DecimalFormat numeroFormateado = new DecimalFormat("#.0000");
+        DecimalFormat numeroFormateado = new DecimalFormat("#.00000");
         String textoFormateado = numeroFormateado.format(number);
         String[] list_number = textoFormateado.split(",");
         String new_number = list_number[0] + "." + list_number[1];

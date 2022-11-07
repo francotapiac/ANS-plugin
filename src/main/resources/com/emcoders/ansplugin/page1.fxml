@@ -52,7 +52,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="759.0" prefWidth="1085.0" styleClass="gradient_background" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1085.0" styleClass="gradient_background" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <VBox fx:id="title_hbox" layoutX="241.0" layoutY="14.0" prefHeight="105.0" prefWidth="825.0" styleClass="container" stylesheets="@styles.css" AnchorPane.leftAnchor="241.0" AnchorPane.topAnchor="14.0">
          <children>
@@ -96,7 +96,7 @@
                   </VBox>
                </children>
             </HBox>
-            <JFXButton fx:id="general_btn" onAction="#handleButtonGeneral" prefHeight="63.0" prefWidth="207.0" style="-fx-background-color: #d8d7f6;" text="General">
+            <JFXButton fx:id="general_btn" onAction="#handleButtonGeneral" prefHeight="63.0" prefWidth="207.0" style="-fx-background-color: #d8d7f6; -fx-border-color: white; -fx-border-radius: 20; -fx-background-radius: 20;" text="General">
                <font>
                   <Font name="Arial Rounded MT Bold" size="16.0" />
                </font>
@@ -104,15 +104,7 @@
                   <Cursor fx:constant="HAND" />
                </cursor>
             </JFXButton>
-            <JFXButton fx:id="alert_btn" onAction="#handleButtonAlert" prefHeight="63.0" prefWidth="207.0" text="Detalle">
-               <font>
-                  <Font name="Arial Rounded MT Bold" size="16.0" />
-               </font>
-               <cursor>
-                  <Cursor fx:constant="HAND" />
-               </cursor>
-            </JFXButton>
-            <JFXButton fx:id="resoruce_btn" onAction="#handleButtonResource" prefHeight="63.0" prefWidth="207.0" text="Recursos">
+            <JFXButton fx:id="alert_btn" onAction="#handleButtonAlert" prefHeight="63.0" prefWidth="207.0" style="-fx-background-color: white; -fx-border-color: white; -fx-border-radius: 20; -fx-background-radius: 20;" text="Detalle">
                <font>
                   <Font name="Arial Rounded MT Bold" size="16.0" />
                </font>
@@ -122,7 +114,7 @@
             </JFXButton>
          </children>
       </VBox>
-      <VBox fx:id="abstract_vbox" alignment="TOP_CENTER" layoutX="14.0" layoutY="364.0" prefHeight="290.0" prefWidth="205.0" styleClass="container" stylesheets="@styles.css" AnchorPane.bottomAnchor="19.0" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="364.0">
+      <VBox fx:id="abstract_vbox" alignment="TOP_CENTER" layoutX="14.0" layoutY="364.0" prefHeight="290.0" prefWidth="205.0" styleClass="container" stylesheets="@styles.css" AnchorPane.leftAnchor="14.0" AnchorPane.topAnchor="364.0">
          <children>
             <Label fx:id="emotion_abstract" alignment="CENTER" prefHeight="55.0" prefWidth="206.0" text="Nombre emoción">
                <font>
@@ -153,9 +145,9 @@
             <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
          </padding>
       </VBox>
-      <AnchorPane fx:id="pane_principal" layoutX="241.0" layoutY="134.0" prefHeight="612.0" prefWidth="825.0">
+      <AnchorPane fx:id="pane_principal" layoutX="241.0" layoutY="134.0" prefHeight="553.0" prefWidth="835.0" AnchorPane.leftAnchor="241.0">
          <children>
-            <VBox fx:id="resources_vbox" prefHeight="608.0" prefWidth="835.0" styleClass="container" stylesheets="@styles.css">
+            <VBox fx:id="resources_vbox" prefHeight="553.0" prefWidth="825.0" styleClass="container" stylesheets="@styles.css">
                <children>
                   <HBox prefHeight="52.0" prefWidth="825.0">
                      <children>
@@ -167,7 +159,7 @@
                         <Separator prefHeight="57.0" prefWidth="531.0" />
                      </children>
                   </HBox>
-                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="260.0" prefWidth="805.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
+                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="290.0" prefWidth="795.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
                      <xAxis>
                         <NumberAxis side="BOTTOM" fx:id="xAxis" />
                      </xAxis>
@@ -231,20 +223,21 @@
                      <children>
                         <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
                            <children>
-                              <Label fx:id="initial_time" prefHeight="55.0" prefWidth="206.0" text="Tiempo Inicial:">
+                              <Label fx:id="segmento_panel" prefHeight="29.0" prefWidth="335.0" text="Segmento">
                                  <font>
                                     <Font name="Arial Rounded MT Bold" size="14.0" />
                                  </font>
+                                 <HBox.margin>
+                                    <Insets left="5.0" right="5.0" />
+                                 </HBox.margin>
                               </Label>
-                              <Label fx:id="emotion" prefHeight="55.0" prefWidth="206.0" text="N° Segmento:">
+                              <Label fx:id="cant_segmento_panel" prefHeight="55.0" prefWidth="335.0" text="N° Segmento:">
                                  <font>
                                     <Font name="Arial Rounded MT Bold" size="14.0" />
                                  </font>
-                              </Label>
-                              <Label fx:id="cardiac_coherence" prefHeight="37.0" prefWidth="215.0" text="Coherencia Cardíaca:">
-                                 <font>
-                                    <Font name="Arial Rounded MT Bold" size="14.0" />
-                                 </font>
+                                 <HBox.margin>
+                                    <Insets left="5.0" right="5.0" />
+                                 </HBox.margin>
                               </Label>
                            </children>
                            <VBox.margin>
@@ -253,20 +246,21 @@
                         </HBox>
                         <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
                            <children>
-                              <Label fx:id="final_time" prefHeight="29.0" prefWidth="206.0" text="Tiempo Final:">
+                              <Label fx:id="alert" prefHeight="29.0" prefWidth="335.0" text="N° Alertas:">
                                  <font>
                                     <Font name="Arial Rounded MT Bold" size="14.0" />
                                  </font>
+                                 <HBox.margin>
+                                    <Insets left="5.0" right="5.0" />
+                                 </HBox.margin>
                               </Label>
-                              <Label fx:id="alert" prefHeight="29.0" prefWidth="210.0" text="Evento:">
+                              <Label fx:id="cardiac_coherence" prefHeight="29.0" prefWidth="335.0" text="Valor de Coherencia: ">
                                  <font>
                                     <Font name="Arial Rounded MT Bold" size="14.0" />
                                  </font>
-                              </Label>
-                              <Label fx:id="value_coherence" prefHeight="29.0" prefWidth="206.0" text="Valor Coherencia:">
-                                 <font>
-                                    <Font name="Arial Rounded MT Bold" size="14.0" />
-                                 </font>
+                                 <HBox.margin>
+                                    <Insets left="5.0" right="5.0" />
+                                 </HBox.margin>
                               </Label>
                            </children>
                            <VBox.margin>
@@ -300,9 +294,9 @@
             </VBox>
          </children>
       </AnchorPane>
-      <AnchorPane fx:id="detail_panel" layoutX="241.0" layoutY="900.0" prefHeight="612.0" prefWidth="835.0">
+      <AnchorPane fx:id="detail_panel" layoutX="241.0" layoutY="900.0" prefHeight="553.0" prefWidth="835.0" styleClass="container" stylesheets="@styles.css">
          <children>
-            <VBox layoutX="7.0" layoutY="13.0" prefHeight="587.0" prefWidth="821.0" styleClass="container" stylesheets="@styles.css">
+            <VBox layoutX="7.0" layoutY="13.0" prefHeight="553.0" prefWidth="825.0" styleClass="container" stylesheets="@styles.css" AnchorPane.bottomAnchor="46.0" AnchorPane.leftAnchor="7.0" AnchorPane.rightAnchor="3.0" AnchorPane.topAnchor="13.0">
                <children>
                   <HBox prefHeight="61.0" prefWidth="821.0">
                      <children>
@@ -314,9 +308,9 @@
                         <Separator prefHeight="57.0" prefWidth="531.0" />
                      </children>
                   </HBox>
-                  <ScrollPane fx:id="scroll_detail" prefHeight="436.0" prefWidth="821.0">
+                  <ScrollPane fx:id="scroll_detail" prefHeight="401.0" prefWidth="821.0">
                      <content>
-                        <TableView fx:id="table_detail" prefHeight="429.0" prefWidth="819.0">
+                        <TableView fx:id="table_detail" prefHeight="385.0" prefWidth="792.0">
                            <columns>
                               <TableColumn fx:id="segment_detail" prefWidth="75.0" text="Segmento" />
                               <TableColumn fx:id="initial_time_detail" prefWidth="129.0" text="Tiempo Inicial (s)" />
@@ -325,10 +319,16 @@
                               <TableColumn fx:id="cardiac_detail" prefWidth="129.0" text="Coherencia Cardíaca" />
                               <TableColumn fx:id="alert_detail" prefWidth="129.0" text="Evento" />
                            </columns>
+                           <opaqueInsets>
+                              <Insets left="10.0" right="10.0" />
+                           </opaqueInsets>
                         </TableView>
                      </content>
+                     <VBox.margin>
+                        <Insets left="15.0" right="15.0" />
+                     </VBox.margin>
                   </ScrollPane>
-                  <HBox alignment="CENTER" prefHeight="100.0" prefWidth="200.0">
+                  <HBox alignment="CENTER" prefHeight="72.0" prefWidth="821.0">
                      <children>
                         <JFXButton fx:id="btn_create_report" alignment="CENTER" buttonType="RAISED" onAction="#handleButtonReport" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Crear Reporte">
                            <opaqueInsets>

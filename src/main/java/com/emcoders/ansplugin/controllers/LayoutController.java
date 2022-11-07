@@ -98,6 +98,11 @@ public class LayoutController extends VBox {
             List<Double> points_fci = signalController.getSignal().getFci();
             List<Double> points_signal = signalController.getSignal_points_fci();
             List<Double> times = signalController.get_times();
+
+            //Obteniendo el minimo y maximo punto de fci para acotar gráfico
+            Double min_fci = signalController.getSignal().getMin_max_fci_point().getKey();
+            Double max_fci = signalController.getSignal().getMin_max_fci_point().getValue();
+            series_fci.getData().add(new XYChart.Data(0,min_fci - 1.0));
             for(int i = 0; i < points_fci.size(); i++){
 
                 Number x = times.get(i);
@@ -112,6 +117,7 @@ public class LayoutController extends VBox {
                 });
 
             }
+
             //this.signal_chart.getData().addAll(series);
 
         }

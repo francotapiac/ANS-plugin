@@ -19,6 +19,7 @@ public class SignalController {
     Float partial_end_time;
     String cardiac_coherence_description;
     String path_image_emotion;
+    int n_segment;
     private List<Double> signal_points_fci;
 
 
@@ -26,6 +27,7 @@ public class SignalController {
     public void create_signal(String path){
         this.signal = new Signal(path);
         create_points_signal_fci();
+        this.signal.calculate_min_max_fci();
     }
 
     public void create_signal_excel(List<List<String>> data_signal, List<List<String>> signal_xls){
@@ -34,6 +36,7 @@ public class SignalController {
         signal.calculate_length_signal(signal.getTime_line());         // Obteniendo tiempo final de la señal
         create_signal_time(signal_xls);                             //Creando arreglos con puntos de la señal y tiempo
         signal.get_general_data();                                    //Obteniendo datos generales de la señal
+        this.signal.calculate_min_max_fci();
     }
 
         public void create_time_line_excel(List<List<String>> data_signal){
@@ -112,6 +115,26 @@ public class SignalController {
                 this.cardiac_coherence_description = signal.getTime_line().get(i).getKey().getDescription();
                 Emotion emotion_aux = new Emotion("");
                 this.path_image_emotion = emotion_aux.create_path(this.emotion);
+                this.n_segment = i + 1;
+                break;
+            }
+        }
+    }
+
+    public void get_particular_data_charge_line_time(Double time_comparate){
+        for(int i = 0; i < signal.getTime_line().size(); i++){
+            Float parcial_start_time = signal.getTime_line().get(i).getKey().getStart_time()*1000;
+            Float parcial_end_time = signal.getTime_line().get(i).getKey().getEnd_time()*1000;
+            if(time_comparate >= parcial_start_time && time_comparate < parcial_end_time){
+                this.partial_start_time = parcial_start_time;
+                this.partial_end_time = parcial_end_time;
+                this.ratio_coherence = signal.getTime_line().get(i).getKey().getRatio_coherence();
+                this.emotion = signal.getTime_line().get(i).getKey().getEmotion().getName();
+                this.type_alert = signal.getTime_line().get(i).getKey().getType_alert();
+                this.cardiac_coherence_description = signal.getTime_line().get(i).getKey().getDescription();
+                Emotion emotion_aux = new Emotion("");
+                this.path_image_emotion = emotion_aux.create_path(this.emotion);
+                this.n_segment = i + 1;
                 break;
             }
         }
@@ -239,5 +262,9 @@ public class SignalController {
 
     public List<Double> getSignal_points_fci() {
         return signal_points_fci;
+    }
+
+    public int getN_segment() {
+        return n_segment;
     }
 }

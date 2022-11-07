@@ -14,6 +14,7 @@ import java.util.*;
 public class Signal {
     private String id;
     private List<Double> fci = new ArrayList<>();
+    private Pair<Double, Double> min_max_fci_point;
     private List<Double> rr_peaks = new ArrayList<>();
     private List<Double> times_fci = new ArrayList<>();
     private List<Double> signal_points = new ArrayList<>();
@@ -205,8 +206,9 @@ public class Signal {
             this.fci.add(format_number_double(Double.parseDouble(list_string_points_signal[i])));
             this.times_fci.add(format_number_double(Double.parseDouble(list_string_times[i])));
             this.rr_peaks.add(format_number_double(Double.parseDouble(list_rr_peaks[i])));
-
         }
+
+
         for(int i = 1; i < list_signal_points.length -1; i++){
             this.signal_points.add(format_number_double(Double.parseDouble(list_signal_points[i])));
             this.times_points.add(format_number_double(Double.parseDouble(list_times_points[i])));
@@ -267,20 +269,37 @@ public class Signal {
 
     // Entrega un número con formato .0000
     public Float format_number(Float number){
-        DecimalFormat numeroFormateado = new DecimalFormat("#.0000");
+        DecimalFormat numeroFormateado = new DecimalFormat("#.00000");
         String textoFormateado = numeroFormateado.format(number);
         String[] list_number = textoFormateado.split(",");
         String new_number = list_number[0] + "." + list_number[1];
         return Float.parseFloat(new_number);
     }
     public Double format_number_double(Double number){
-        DecimalFormat numeroFormateado = new DecimalFormat("#.0000");
+        DecimalFormat numeroFormateado = new DecimalFormat("#.00000");
         String textoFormateado = numeroFormateado.format(number);
         String[] list_number = textoFormateado.split(",");
         String new_number = list_number[0] + "." + list_number[1];
         return Double.parseDouble(new_number);
     }
 
+    public Pair<Double,Double> calculate_min_max_fci(){
+        //Creando variables para ver menor y mayor punto de fci
+        Double min_fci = 200.0;
+        Double max_fci = 0.0;
+        for(Double point: fci){
+            //Verificando menor y mayor fci
+            if(point < min_fci){
+                min_fci = point;
+            }
+            if(point > max_fci){
+                max_fci =point;
+            }
+        }
+        //Instanciando min_max para el fci
+        min_max_fci_point = new Pair<>(min_fci,max_fci);
+        return min_max_fci_point;
+    }
 
 
     /*
@@ -401,5 +420,13 @@ public class Signal {
 
     public void setEmotion_image_path(String emotion_image_path) {
         this.emotion_image_path = emotion_image_path;
+    }
+
+    public Pair<Double, Double> getMin_max_fci_point() {
+        return min_max_fci_point;
+    }
+
+    public void setMin_max_fci_point(Pair<Double, Double> min_max_fci_point) {
+        this.min_max_fci_point = min_max_fci_point;
     }
 }

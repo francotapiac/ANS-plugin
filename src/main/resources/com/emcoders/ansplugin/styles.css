@@ -1,5 +1,5 @@
 .gradient_background{
- 	-fx-background-color: linear-gradient(from 25% 25% to 100% 100%, #fdeff3, #F4DFE3);
+ 	-fx-background-color: linear-gradient(from 25% 25% to 25% 25%, #e0ebf8, #e0ebf8);
 }
 
 .line-color{
