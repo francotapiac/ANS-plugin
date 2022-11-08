@@ -120,6 +120,8 @@ public class ANSController extends CanalModel {
     @FXML
     private JFXButton btn_create_event;
     @FXML
+    private JFXButton btn_process_signal;
+    @FXML
     TagDialog tagDialog;
 
     Dialog<String> dialog_charge;
@@ -228,10 +230,13 @@ public class ANSController extends CanalModel {
             System.out.println("Vieja Selección: " + p1);
         });
 
+
         //Se desctivan botones
         this.btn_set_emotion.setDisable(true);
         this.btn_create_event.setDisable(true);
+        this.btn_process_signal.setDisable(true);
         this.combobox_emotions.setDisable(true);
+
 
 
         //seek(13.6);
@@ -316,6 +321,26 @@ public class ANSController extends CanalModel {
 
     public TimelineElement openSource(String path) {
 
+        //Activando botón
+        this.btn_process_signal.setDisable(false);
+
+        this.path_signal = path;
+        this.source_name = Paths.get(path).getFileName().toString();
+
+        //Párametros de la línea de tiempo
+        Double sourceLength = get_length_signal_file(path);
+        timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
+        this.root.fireEvent(
+                new AddSourceEvent(this.getProjectDir() + "\\" + this.source_name, this.getName())
+        );
+
+        return this.timelineElement;
+
+
+    }
+
+    public void get_signal_rest(String path){
+
         //Ruta completa
         String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
 
@@ -329,18 +354,27 @@ public class ANSController extends CanalModel {
             //update application thread
             openSourceThread(path);
             addEventTag();
-           // dialog.close();
+            //Desactivando botón procesar señal y activando opción de crear evento
+            this.btn_process_signal.setDisable(true);
+            this.btn_create_event.setDisable(false);
+            // dialog.close();
         });
+    }
 
-        //Párametros de la línea de tiempo
-        Double sourceLength = signalController.get_sourceLength();
-        timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
-        this.root.fireEvent(
-                new AddSourceEvent(this.getProjectDir() + "\\" + this.source_name, this.getName())
-        );
+    public Double get_length_signal_file(String path){
+        Double sourceLength = 0.0;
+        try (BufferedReader reader = new BufferedReader(new FileReader(new File(path)))) {
+            int count = 0;
+            String line;
+            while ((line = reader.readLine()) != null) {
+                count++;
+            }
+            sourceLength = count/1000.0;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
-        return this.timelineElement;
-
+        return sourceLength;
 
     }
 
@@ -352,7 +386,7 @@ public class ANSController extends CanalModel {
 
         VBox container = new VBox();
         container.setAlignment(Pos.CENTER);
-        container.getChildren().addAll(code, desc);
+        //container.getChildren().addAll(code, desc);
 
         dialogContent = MFXGenericDialogBuilder.build()
                 .setContent(container)
@@ -446,6 +480,7 @@ public class ANSController extends CanalModel {
     }
 
     public TimelineElement loadProjectSource(String path) {
+
         signalController = new SignalController();
         this.source_name = Paths.get(path).getFileName().toString();
         String complete_path = path + ".xls";
@@ -458,24 +493,22 @@ public class ANSController extends CanalModel {
                 System.out.println("time: \n " + time_line_xls);
                 System.out.println("Signal: \n " + signal_xls);
                 signalController.create_signal_excel(time_line_xls, signal_xls);
+                Platform.runLater(() -> {
+                    //update application thread
+                    openSourceThread(path);
+                    //addEventTag();
+                });
+
             }
             else{
-                String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
-                signalController.create_signal(route_api);
-                this.path_signal = path;
-                this.source_name = Paths.get(path).getFileName().toString();
+                // Pidiendo api
+                get_signal_rest(path);
+                //Párametros de la línea de tiempo
+
             }
+            Double sourceLength = signalController.get_sourceLength();
+            timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
         }
-
-        Platform.runLater(() -> {
-            //update application thread
-            openSourceThread(path);
-            //addEventTag();
-        });
-        //Párametros de la línea de tiempo
-        Double sourceLength = signalController.get_sourceLength();
-        timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
-
         return this.timelineElement;
     }
 
@@ -702,8 +735,6 @@ public class ANSController extends CanalModel {
         };
         service.start();
 
-
-
     }
 
     @FXML
@@ -912,6 +943,42 @@ public class ANSController extends CanalModel {
 
     }
 
+    //Método que procesa la señal ingresada
+    @FXML
+    void handleButtonProcessSignal(ActionEvent e){
+        // Create a background Task
+        Task<Void> task = new Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                get_signal_rest(path_signal);
+                return null;
+            }
+        };
+
+        //Mientras se ejecuta la tarea
+        task.setOnRunning(wse -> {
+           dialog_charge();
+        });
+
+        // This method allows us to handle any Exceptions thrown by the task
+        task.setOnFailed(wse -> {
+            wse.getSource().getException().printStackTrace();
+        });
+
+        // If the task completed successfully, perform other updates here
+        task.setOnSucceeded(wse -> {
+            System.out.println("Done!");
+            dialog.close();
+        });
+
+
+
+        // Now, start the task on a background thread
+        new Thread(task).start();
+
+
+    }
+
 
     @FXML
     void handleButtonEvent(ActionEvent e){
@@ -992,12 +1059,14 @@ public class ANSController extends CanalModel {
         final ProgressIndicator pin = new ProgressIndicator();
         pin.setProgress(-1.0f);
 
-        final HBox hb = new HBox();
-        hb.setSpacing(5);
-        hb.setAlignment(Pos.CENTER);
-        hb.getChildren().addAll(pb,pin);
+        final VBox vbox = new VBox();
+        vbox.setSpacing(5);
+        vbox.setAlignment(Pos.CENTER);
+        Label label = new Label();
+        label.setText("EMCODER-Heart se ecuentra analizando la señal ingresada...");
+        vbox.getChildren().addAll(pin, label);
         //Adding buttons to the dialog pane
-        dialog_charge.getDialogPane().getChildren().addAll(hb);
+        dialog_charge.getDialogPane().getChildren().addAll(vbox);
         dialog_charge.showAndWait();
         return this.dialog_charge;
     }

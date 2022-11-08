@@ -52,7 +52,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1085.0" styleClass="gradient_background" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="700.0" prefWidth="1080.0" styleClass="gradient_background" stylesheets="@styles.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <VBox fx:id="title_hbox" layoutX="241.0" layoutY="14.0" prefHeight="105.0" prefWidth="825.0" styleClass="container" stylesheets="@styles.css" AnchorPane.leftAnchor="241.0" AnchorPane.topAnchor="14.0">
          <children>
@@ -271,6 +271,20 @@
                   </VBox>
                   <HBox alignment="CENTER" prefHeight="42.0" prefWidth="825.0" stylesheets="@styles.css">
                      <children>
+                        <JFXButton fx:id="btn_process_signal" buttonType="RAISED" onAction="#handleButtonProcessSignal" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Procesar Señal">
+                           <opaqueInsets>
+                              <Insets />
+                           </opaqueInsets>
+                           <cursor>
+                              <Cursor fx:constant="HAND" />
+                           </cursor>
+                           <font>
+                              <Font name="Arial Rounded MT Bold" size="12.0" />
+                           </font>
+                           <HBox.margin>
+                              <Insets left="10.0" right="10.0" />
+                           </HBox.margin>
+                        </JFXButton>
                         <JFXButton fx:id="btn_create_event" buttonType="RAISED" onAction="#handleButtonEvent" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Crear Evento">
                            <opaqueInsets>
                               <Insets />
@@ -281,6 +295,9 @@
                            <font>
                               <Font name="Arial Rounded MT Bold" size="12.0" />
                            </font>
+                           <HBox.margin>
+                              <Insets left="10.0" right="10.0" />
+                           </HBox.margin>
                         </JFXButton>
                      </children>
                      <VBox.margin>
