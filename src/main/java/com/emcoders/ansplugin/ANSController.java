@@ -18,6 +18,8 @@ import io.github.palexdev.materialfx.dialogs.MFXStageDialog;
 import io.github.palexdev.materialfx.enums.ScrimPriority;
 import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
@@ -122,6 +124,8 @@ public class ANSController extends CanalModel {
     @FXML
     private JFXButton btn_process_signal;
     @FXML
+    private JFXButton btn_segment_report;
+    @FXML
     TagDialog tagDialog;
 
     Dialog<String> dialog_charge;
@@ -172,9 +176,8 @@ public class ANSController extends CanalModel {
     String source_name;
     InputStream path_image_emotion;
     Boolean activate_btn_file_chart = true;
-
     private ArrayList<BooleanProperty> tagsSelected = new ArrayList<>();
-
+    SegmentSignal segmentSignal;
 
     // Instance state //
     private volatile boolean isLoaded = false;
@@ -236,8 +239,21 @@ public class ANSController extends CanalModel {
         this.btn_create_event.setDisable(true);
         this.btn_process_signal.setDisable(true);
         this.combobox_emotions.setDisable(true);
+        this.btn_segment_report.setDisable(true);
 
-
+        //Agregando listener para cada fila de la tabla de detalles
+        this.table_detail.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
+            @Override
+            public void changed(ObservableValue observableValue, Object oldValue, Object newValue) {
+                //Check whether item is selected and set value of selected item to Label
+                if(table_detail.getSelectionModel().getSelectedItem() != null)
+                {
+                    segmentSignal = table_detail.getSelectionModel().getSelectedItem();
+                    btn_segment_report.setDisable(false);
+                    System.out.println(segmentSignal.getHr_max());
+                }
+            }
+        });
 
         //seek(13.6);
 
@@ -471,11 +487,9 @@ public class ANSController extends CanalModel {
         this.chart.getYAxis().setAutoRanging(false);
         this.chart.setAnimated(true);
 
-
-
         //*********************** Tabla de detalles ***********************
         create_table_detail(true);
-        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
 
     }
 
@@ -887,6 +901,7 @@ public class ANSController extends CanalModel {
         Float final_seg = format_number(Double.parseDouble(final_time_task))/1000;
         segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
         image_emotion.setImage(new Image(path_image_emotion));
+        this.emotion_abstract.setText(this.emotion_task);
         this.image_emotion.setFitHeight(181);
         this.image_emotion.setFitWidth(150);
 
@@ -927,7 +942,7 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonReport(ActionEvent event) {
-        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
 
         //Creating a dialog
         Dialog<String> dialog = new Dialog<String>();
@@ -1035,8 +1050,7 @@ public class ANSController extends CanalModel {
                     this.signalController.set_manual_alert(start_time, end_time );
                     //Modificando tabla con nueva alerta en segmento específico
                     create_table_detail(false);
-                    reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
-
+                    reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
                     dialog.close();
 
                 }), Map.entry( new MFXButton("Cancelar"), event -> {
@@ -1080,7 +1094,7 @@ public class ANSController extends CanalModel {
 
         //Modificando tabla con nueva emoción en segmento específico
         create_table_detail(false);
-        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.getProjectDir(), this.source_name);
+        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
 
         //Modificando Labels
         emotion_task = signalController.getEmotion();
@@ -1090,6 +1104,13 @@ public class ANSController extends CanalModel {
         this.btn_set_emotion.setDisable(true);
     }
 
+    @FXML
+    void handleButtonExportSegment(ActionEvent event){
+        SegmentSignal segmentSignal = this.table_detail.getSelectionModel().getSelectedItem();
+        System.out.println(segmentSignal.getEmotion());
+    }
+
+
     // Entrega un número con formato .0000
     public Float format_number(Double number){
         DecimalFormat numeroFormateado = new DecimalFormat("#.00000");
@@ -1098,5 +1119,7 @@ public class ANSController extends CanalModel {
         String new_number = list_number[0] + "." + list_number[1];
         return Float.parseFloat(new_number);
     }
+
+
 
 }

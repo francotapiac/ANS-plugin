@@ -69,6 +69,9 @@ public class SignalController {
             }
             Feature feature = new Feature(times_features, freq_features, start_time, end_time);
             Alert alert = new Alert(ratio_coherence, "", emotion, start_time, end_time);
+            alert.setDescription(data_signal.get(i).get(4));
+            alert.setText_alert(data_signal.get(i).get(5));
+
 
             //Contando cantidad de emociones y agregando a lista
             signal.append_emotions_signal(name_emotion);

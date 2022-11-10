@@ -16,6 +16,7 @@ public class Alert extends CardiacCoherence{
         this.text_alert = create_alert(ratio_coherence);
     };
 
+
     /*
     Calcula el tipo de alerta según el ratio de coherencia
      */
