@@ -44,12 +44,15 @@ import java.io.*;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.Timer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.FutureTask;
 
 import com.jfoenix.controls.JFXButton;
 import javafx.util.Pair;
+
+import javax.swing.*;
 
 
 public class ANSController extends CanalModel {
@@ -125,6 +128,14 @@ public class ANSController extends CanalModel {
     private JFXButton btn_process_signal;
     @FXML
     private JFXButton btn_segment_report;
+
+    //Botones render señal
+    @FXML
+    private JFXButton btn_adelantar;
+    @FXML
+    private JFXButton btn_atras;
+    @FXML
+    private JFXButton btn_play;
     @FXML
     TagDialog tagDialog;
 
@@ -182,6 +193,8 @@ public class ANSController extends CanalModel {
     // Instance state //
     private volatile boolean isLoaded = false;
 
+    Double render_millis_chart;
+
     @Override
     public Pane getLayout() {
         /*
@@ -212,8 +225,6 @@ public class ANSController extends CanalModel {
     // Inicializa componentes
     public void initPlugin(){
         //*********************** Gráfico ***********************
-        // Instanciando controlador de señal
-
 
         //Moviendo todos los paneles en su posición real
         this.detail_panel.setLayoutX(this.pane_principal.getLayoutX());
@@ -233,6 +244,12 @@ public class ANSController extends CanalModel {
             System.out.println("Vieja Selección: " + p1);
         });
 
+        //Agregando imagenes a botones de render de gráfico
+
+        this.btn_play.setGraphic(create_image_btn_render("images/play.png"));
+        this.btn_atras.setGraphic(create_image_btn_render("images/back.png"));
+        this.btn_adelantar.setGraphic(create_image_btn_render("images/next.png"));
+        this.render_millis_chart = 0.0;
 
         //Se desctivan botones
         this.btn_set_emotion.setDisable(true);
@@ -257,6 +274,14 @@ public class ANSController extends CanalModel {
 
         //seek(13.6);
 
+    }
+
+    public ImageView create_image_btn_render(String path_image){
+        Image image = new Image(getClass().getResourceAsStream(path_image));
+        ImageView image_view = new ImageView(image);
+        image_view.setFitHeight(20);
+        image_view.setFitWidth(20);
+        return image_view;
     }
 
     public void disable_combobox_emotion(){
@@ -310,9 +335,11 @@ public class ANSController extends CanalModel {
         final_time_task = signalController.getPartial_end_time().toString();
         path_image_emotion =  ANSController.class.getResourceAsStream(signalController.getPath_image_emotion());
         select_type_view_chart(type_view_chart);
+        System.out.println(type_view_chart);
         Platform.runLater(() -> {
             //update application thread
             xAxis.setLowerBound(lower_x_axis);
+            System.out.println(upper_x_axis);
             xAxis.setUpperBound(upper_x_axis);
             xAxis.setAutoRanging(false);
             set_data_abstact(millis);
@@ -893,7 +920,7 @@ public class ANSController extends CanalModel {
     }
 
     public void set_data_abstact(double millis){
-
+        System.out.println("acaaa");
         alert.setText("Descripción: " + alert_task );
         cant_segmento_panel.setText("N° Segmento: " + segment_time);
         cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
@@ -1108,6 +1135,75 @@ public class ANSController extends CanalModel {
     void handleButtonExportSegment(ActionEvent event){
         SegmentSignal segmentSignal = this.table_detail.getSelectionModel().getSelectedItem();
         System.out.println(segmentSignal.getEmotion());
+    }
+
+    // Botones para pausar, comenzar, retroceder y adelantar señal
+    @FXML
+    void pushNextSignal(ActionEvent event) {
+
+    }
+
+    @FXML
+    void pushPlaySignal(ActionEvent event) {
+        this.btn_play.setGraphic(create_image_btn_render("images/pause.png"));
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(render_millis_chart > signalController.getSignal().getEnd_time_signal()){
+                            cancel();
+                        }
+                        render_check_signal(render_millis_chart, 3.0);
+                        render_millis_chart = render_millis_chart + 1;
+
+                    }
+                });
+            }
+        }, 0, 300);
+    }
+
+    public void render_check_signal(Double render_millis_chart, Double window){
+        Double low;
+        Double upper;
+        if(render_millis_chart < window){
+            low = 0.0;
+            upper = render_millis_chart + window;
+       } else if (render_millis_chart >= window && render_millis_chart < xAxis.getUpperBound()) {
+            low = render_millis_chart - window;
+            upper = render_millis_chart + window;
+        }
+        else{
+            low = render_millis_chart - window;
+            upper = xAxis.getUpperBound();
+        }
+
+        signalController.get_particular_data(format_number(render_millis_chart*1000));
+        alert_task = signalController.getCardiac_coherence_description();
+        segment_time = signalController.getN_segment();
+        emotion_task = signalController.getEmotion();
+        cardiac_coherence_task = signalController.getRatio_coherence().toString();
+        initial_time_task = signalController.getPartial_start_time().toString();
+        final_time_task = signalController.getPartial_end_time().toString();
+        path_image_emotion =  ANSController.class.getResourceAsStream(signalController.getPath_image_emotion());
+        System.out.println(type_view_chart);
+        Platform.runLater(() -> {
+            //update application thread
+            System.out.println("lower: " + low);
+            System.out.println("upper: " + upper);
+            xAxis.setLowerBound(low);
+            xAxis.setUpperBound(upper);
+            xAxis.setAutoRanging(false);
+            set_data_abstact(render_millis_chart);
+        });
+    }
+
+    @FXML
+    void pushReturnSignal(ActionEvent event) {
+
     }
 
 
