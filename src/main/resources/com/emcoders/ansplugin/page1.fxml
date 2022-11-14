@@ -42,6 +42,7 @@
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.ToggleGroup?>
@@ -159,45 +160,7 @@
                         <Separator prefHeight="57.0" prefWidth="531.0" />
                      </children>
                   </HBox>
-                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="290.0" prefWidth="795.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
-                     <xAxis>
-                        <NumberAxis side="BOTTOM" fx:id="xAxis" />
-                     </xAxis>
-                     <yAxis>
-                        <NumberAxis fx:id="yAxis" side="LEFT" />
-                     </yAxis>
-                     <VBox.margin>
-                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                     </VBox.margin>
-                  </LineChart>
-                  <HBox alignment="CENTER" prefHeight="49.0" prefWidth="815.0">
-                     <children>
-                        <JFXButton fx:id="btn_atras" buttonType="RAISED" onAction="#pushReturnSignal" prefHeight="29.0" prefWidth="65.0" style="-fx-background-color: white; -fx-border-color: white; -fx-border-radius: 50; -fx-background-radius: 50;">
-                           <HBox.margin>
-                              <Insets bottom="5.0" left="5.0" right="5.0" />
-                           </HBox.margin>
-                        </JFXButton>
-                        <JFXButton fx:id="btn_play" buttonType="RAISED" onAction="#pushPlaySignal" prefHeight="29.0" prefWidth="65.0" style="-fx-background-color: white; -fx-border-color: white; -fx-border-radius: 50; -fx-background-radius: 50;">
-                           <HBox.margin>
-                              <Insets bottom="5.0" left="5.0" right="5.0" />
-                           </HBox.margin>
-                        </JFXButton>
-                        <JFXButton fx:id="btn_adelantar" buttonType="RAISED" onAction="#pushNextSignal" prefHeight="29.0" prefWidth="65.0" style="-fx-background-color: white; -fx-border-color: white; -fx-border-radius: 50; -fx-background-radius: 50;">
-                           <HBox.margin>
-                              <Insets bottom="5.0" left="5.0" right="5.0" />
-                           </HBox.margin>
-                        </JFXButton>
-                     </children>
-                  </HBox>
-                  <Label alignment="CENTER" prefHeight="15.0" prefWidth="852.0" text="Tipo de visualización de señal">
-                     <font>
-                        <Font name="Arial Rounded MT Bold" size="12.0" />
-                     </font>
-                     <VBox.margin>
-                        <Insets bottom="5.0" top="5.0" />
-                     </VBox.margin>
-                  </Label>
-                  <HBox alignment="CENTER" prefHeight="42.0" prefWidth="825.0">
+                  <HBox alignment="CENTER_RIGHT" prefHeight="42.0" prefWidth="825.0">
                      <children>
                         <RadioButton fx:id="radio_general" mnemonicParsing="false" onAction="#set_type_signal_chart" text="General">
                            <HBox.margin>
@@ -217,6 +180,50 @@
                               <Insets left="5.0" right="5.0" />
                            </HBox.margin>
                         </RadioButton>
+                     </children>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <VBox.margin>
+                        <Insets right="10.0" />
+                     </VBox.margin>
+                  </HBox>
+                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="290.0" prefWidth="795.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
+                     <xAxis>
+                        <NumberAxis side="BOTTOM" fx:id="xAxis" />
+                     </xAxis>
+                     <yAxis>
+                        <NumberAxis fx:id="yAxis" side="LEFT" />
+                     </yAxis>
+                     <VBox.margin>
+                        <Insets left="10.0" right="10.0" top="10.0" />
+                     </VBox.margin>
+                  </LineChart>
+                  <Slider fx:id="slide_chart" prefHeight="23.0" prefWidth="750.0" showTickLabels="true" showTickMarks="true">
+                     <VBox.margin>
+                        <Insets bottom="5.0" left="50.0" right="17.0" />
+                     </VBox.margin>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </Slider>
+                  <HBox alignment="CENTER" prefHeight="49.0" prefWidth="815.0">
+                     <children>
+                        <JFXButton fx:id="btn_atras" buttonType="RAISED" onAction="#pushReturnSignal" prefHeight="29.0" prefWidth="65.0" style="-fx-background-color: white; -fx-border-color: white; -fx-border-radius: 50; -fx-background-radius: 50;">
+                           <HBox.margin>
+                              <Insets bottom="5.0" left="5.0" right="5.0" />
+                           </HBox.margin>
+                        </JFXButton>
+                        <JFXButton fx:id="btn_play" buttonType="RAISED" onAction="#pushPlaySignal" prefHeight="29.0" prefWidth="65.0" style="-fx-background-color: white; -fx-border-color: white; -fx-border-radius: 50; -fx-background-radius: 50;">
+                           <HBox.margin>
+                              <Insets bottom="5.0" left="5.0" right="5.0" />
+                           </HBox.margin>
+                        </JFXButton>
+                        <JFXButton fx:id="btn_adelantar" buttonType="RAISED" onAction="#pushNextSignal" prefHeight="29.0" prefWidth="65.0" style="-fx-background-color: white; -fx-border-color: white; -fx-border-radius: 50; -fx-background-radius: 50;">
+                           <HBox.margin>
+                              <Insets bottom="5.0" left="5.0" right="5.0" />
+                           </HBox.margin>
+                        </JFXButton>
                      </children>
                      <opaqueInsets>
                         <Insets />

@@ -3,6 +3,7 @@ package com.emcoders.ansplugin;
 import com.emcoders.ansplugin.components.TagDialog;
 import com.emcoders.ansplugin.controllers.*;
 import com.emcoders.ansplugin.models.Emotion;
+import com.emcoders.ansplugin.models.Project;
 import com.emcoders.ansplugin.models.SegmentSignal;
 import com.emcoders.scansembox.Events.AddSourceEvent;
 import com.emcoders.scansembox.Events.AddTagEvent;
@@ -27,6 +28,7 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -43,6 +45,7 @@ import javafx.stage.Modality;
 import java.io.*;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.CountDownLatch;
@@ -137,6 +140,12 @@ public class ANSController extends CanalModel {
     @FXML
     private JFXButton btn_play;
     @FXML
+    private Slider slide_chart;
+    Double render_millis_chart;
+    boolean is_play;
+    Timer timer; //timer del render
+
+    @FXML
     TagDialog tagDialog;
 
     Dialog<String> dialog_charge;
@@ -193,7 +202,9 @@ public class ANSController extends CanalModel {
     // Instance state //
     private volatile boolean isLoaded = false;
 
-    Double render_millis_chart;
+    //Proyecto
+    Project project;
+
 
     @Override
     public Pane getLayout() {
@@ -245,11 +256,12 @@ public class ANSController extends CanalModel {
         });
 
         //Agregando imagenes a botones de render de gráfico
-
         this.btn_play.setGraphic(create_image_btn_render("images/play.png"));
         this.btn_atras.setGraphic(create_image_btn_render("images/back.png"));
         this.btn_adelantar.setGraphic(create_image_btn_render("images/next.png"));
         this.render_millis_chart = 0.0;
+        //Indicando que no se ha presionado el botón play
+        this.is_play = false;
 
         //Se desctivan botones
         this.btn_set_emotion.setDisable(true);
@@ -257,6 +269,7 @@ public class ANSController extends CanalModel {
         this.btn_process_signal.setDisable(true);
         this.combobox_emotions.setDisable(true);
         this.btn_segment_report.setDisable(true);
+        this.slide_chart.setDisable(true);
 
         //Agregando listener para cada fila de la tabla de detalles
         this.table_detail.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
@@ -271,6 +284,9 @@ public class ANSController extends CanalModel {
                 }
             }
         });
+
+        //Timer del render para ver chart como vídeo
+        this.timer = new Timer();
 
         //seek(13.6);
 
@@ -384,6 +400,10 @@ public class ANSController extends CanalModel {
 
     public void get_signal_rest(String path){
 
+        //Obteniendo segmentos a analizar de la señal
+        Double start_time = signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionX() / timelineElement.getWidth();
+        Double end_time = start_time + signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionWidth() / timelineElement.getWidth();
+
         //Ruta completa
         String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
 
@@ -400,7 +420,41 @@ public class ANSController extends CanalModel {
             //Desactivando botón procesar señal y activando opción de crear evento
             this.btn_process_signal.setDisable(true);
             this.btn_create_event.setDisable(false);
+
             // dialog.close();
+        });
+    }
+
+    public void dialog_project_create(String path){
+        Dialog<Project> dialog = new Dialog<>();
+        dialog.setTitle("Información del insumo");
+        dialog.setHeaderText("Por favor, ingrese sigueintes datos de la señal cardíaca…");
+        DialogPane dialogPane = dialog.getDialogPane();
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        Label sampleLabel = new Label("Frecuencia de Muestreo");
+        TextField sampleRate = new TextField("1000.0");
+        Label windowLabel = new Label("Ventana de Procesamiento");
+        TextField windowSampling = new TextField("20.0");
+        Label shifLabel = new Label("Precisión de Procesamiento");
+        TextField shifSampling = new TextField("1.0");
+
+        dialogPane.setContent(new VBox(8, sampleLabel, sampleRate, windowLabel, windowSampling, shifLabel, shifSampling));
+        Platform.runLater(sampleRate::requestFocus);
+        Platform.runLater(windowSampling::requestFocus);
+        Platform.runLater(shifSampling::requestFocus);
+
+        dialog.setResultConverter((ButtonType button) -> {
+            if (button == ButtonType.OK) {
+                project = new Project(this.getName(), this.getProjectDir(), 1000.0, 20.0, 1.0);
+                get_signal_rest(path);
+
+            }
+            return null;
+        });
+        Optional<Project> optionalResult = dialog.showAndWait();
+        optionalResult.ifPresent((Project results) -> {
+
         });
     }
 
@@ -518,6 +572,20 @@ public class ANSController extends CanalModel {
         create_table_detail(true);
         reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
 
+
+        //Render
+        this.slide_chart.setDisable(false);
+        this.slide_chart.setMax(signalController.getSignal().getEnd_time_signal());
+        this.slide_chart.valueProperty().addListener((observableValue, oldValue, newValue) -> {
+            if(render_millis_chart >= signalController.getSignal().getEnd_time_signal() || render_millis_chart == 0.0)
+                Platform.runLater(() -> {
+                    this.btn_play.setGraphic(create_image_btn_render("images/play.png"));
+                    this.is_play = false;
+                });
+            render_millis_chart = newValue.doubleValue();
+            render_check_signal(newValue.doubleValue(), 3.0); //Aumenta el contador
+        });
+
     }
 
     public TimelineElement loadProjectSource(String path) {
@@ -556,8 +624,8 @@ public class ANSController extends CanalModel {
     public void loadProjectTag(String source, String code, String desc, double initTimeInMS, double lengthInMS) {
         Color color;
         signalController.get_particular_data_charge_line_time(initTimeInMS);
-        if (signalController.getRatio_coherence() <= 0.5) color = Color.RED;
-         else color = Color.ORANGE;
+        if (signalController.getRatio_coherence() <= 0.5) color = Color.rgb(105,105,105);
+         else color = Color.rgb(169,169,169);
 
 
         TimelineTag timelineTag = new TimelineTag(this.timelineElement.getWidth() * initTimeInMS / (signalController.getSignal().getEnd_time_signal()*1000),
@@ -943,11 +1011,11 @@ public class ANSController extends CanalModel {
                 double partial_ratio_coherence = signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence();
                 Color color;
                 if (partial_ratio_coherence <= 0.5 && i != 0)
-                    color = Color.RED;
+                    color = Color.rgb(105,105,105);
                 else if (i == 0) {
                     color = Color.LIGHTGRAY;
 
-                } else color = Color.ORANGE;
+                } else color = Color.rgb(169,169,169);
 
                 TimelineTag timelineTag = new TimelineTag(
                         this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
@@ -992,7 +1060,8 @@ public class ANSController extends CanalModel {
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                get_signal_rest(path_signal);
+                dialog_project_create(path_signal);
+                //get_signal_rest(path_signal);
                 return null;
             }
         };
@@ -1133,6 +1202,8 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonExportSegment(ActionEvent event){
+
+
         SegmentSignal segmentSignal = this.table_detail.getSelectionModel().getSelectedItem();
         System.out.println(segmentSignal.getEmotion());
     }
@@ -1140,30 +1211,68 @@ public class ANSController extends CanalModel {
     // Botones para pausar, comenzar, retroceder y adelantar señal
     @FXML
     void pushNextSignal(ActionEvent event) {
+        //Detiene el avance en play de la señal
+        if(is_play){
+            is_play = false;
+            timer.cancel();
+            this.btn_play.setGraphic(create_image_btn_render("images/play.png"));
+        }
+        if(render_millis_chart < signalController.getSignal().getEnd_time_signal()){
+            render_millis_chart = render_millis_chart + 0.5;
+            slide_chart.setValue(render_millis_chart); //Activa el listener ubicado en la sección render del método openSourceThread
+        }
+    }
 
+    @FXML
+    void pushReturnSignal(ActionEvent event) {
+    //Detiene el avance en play de la señal
+        if(is_play){
+            is_play = false;
+            timer.cancel();
+            this.btn_play.setGraphic(create_image_btn_render("images/play.png"));
+        }
+        if(render_millis_chart > 0){
+            render_millis_chart = render_millis_chart - 0.5;
+            slide_chart.setValue(render_millis_chart); //Activa el listener ubicado en la sección render del método openSourceThread
+        }
     }
 
     @FXML
     void pushPlaySignal(ActionEvent event) {
-        this.btn_play.setGraphic(create_image_btn_render("images/pause.png"));
-        Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
+        if(is_play){
+            is_play = false;
+            timer.cancel();
+            this.btn_play.setGraphic(create_image_btn_render("images/play.png"));
+        }
+        else{
+            timer = new Timer();
+            is_play = true;
+            this.btn_play.setGraphic(create_image_btn_render("images/pause.png"));
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
 
-                SwingUtilities.invokeLater(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(render_millis_chart > signalController.getSignal().getEnd_time_signal()){
-                            cancel();
+                    SwingUtilities.invokeLater(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(render_millis_chart >= signalController.getSignal().getEnd_time_signal()){
+                                render_millis_chart = 0.0;
+                                slide_chart.setValue(0.0);
+                                cancel();
+                            }
+                            else{
+                                //render_check_signal(render_millis_chart, 3.0);
+                                Platform.runLater(() -> {
+                                    slide_chart.setValue(render_millis_chart); //Activa el listener ubicado en la sección render del método openSourceThread
+                                });
+
+                                render_millis_chart = render_millis_chart + 1;
+                            }
                         }
-                        render_check_signal(render_millis_chart, 3.0);
-                        render_millis_chart = render_millis_chart + 1;
-
-                    }
-                });
-            }
-        }, 0, 300);
+                    });
+                }
+            }, 0, 300);
+        }
     }
 
     public void render_check_signal(Double render_millis_chart, Double window){
@@ -1172,13 +1281,13 @@ public class ANSController extends CanalModel {
         if(render_millis_chart < window){
             low = 0.0;
             upper = render_millis_chart + window;
-       } else if (render_millis_chart >= window && render_millis_chart < xAxis.getUpperBound()) {
+       } else if (render_millis_chart >= window && render_millis_chart < signalController.getSignal().getEnd_time_signal()) {
             low = render_millis_chart - window;
             upper = render_millis_chart + window;
         }
         else{
             low = render_millis_chart - window;
-            upper = xAxis.getUpperBound();
+            upper = signalController.getSignal().getEnd_time_signal();
         }
 
         signalController.get_particular_data(format_number(render_millis_chart*1000));
@@ -1201,10 +1310,7 @@ public class ANSController extends CanalModel {
         });
     }
 
-    @FXML
-    void pushReturnSignal(ActionEvent event) {
 
-    }
 
 
     // Entrega un número con formato .0000
