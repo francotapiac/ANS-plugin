@@ -81,6 +81,9 @@ public class ReportController {
     }
 
     public  List<List<String>> read_xls(String path, boolean allCellHaveData, int type_read){
+        if(path == "")
+            return null;
+
         List<List<String>> sheetData = new ArrayList();
         int headerCount = 0;
 

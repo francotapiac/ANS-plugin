@@ -1,6 +1,5 @@
 package com.emcoders.ansplugin.components;
 import com.emcoders.ansplugin.HelloApplication;
-import com.emcoders.ansplugin.utils.Utils;
 import com.emcoders.scansembox.Utils.TimelineElement;
 import io.github.palexdev.materialfx.controls.MFXButton;
 import javafx.application.Platform;

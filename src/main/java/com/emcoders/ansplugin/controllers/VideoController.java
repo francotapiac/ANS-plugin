@@ -10,6 +10,8 @@ import java.io.File;
 
 public class VideoController {
     public MediaPlayer initialize_video(String path){
+        if(path == "")
+            return null;
 
         //Instantiating Media class
         Media media = new Media(new File(path).toURI().toString());

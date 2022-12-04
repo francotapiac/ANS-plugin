@@ -188,7 +188,7 @@
                         <Insets right="10.0" />
                      </VBox.margin>
                   </HBox>
-                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="290.0" prefWidth="795.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
+                  <LineChart fx:id="chart" horizontalGridLinesVisible="false" prefHeight="310.0" prefWidth="795.0" title="Frecuencia Cardíaca Instantánea en el tiempo">
                      <xAxis>
                         <NumberAxis side="BOTTOM" fx:id="xAxis" />
                      </xAxis>
@@ -308,7 +308,7 @@
                               <Insets left="10.0" right="10.0" />
                            </HBox.margin>
                         </JFXButton>
-                        <JFXButton fx:id="btn_create_event" buttonType="RAISED" onAction="#handleButtonEvent" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Crear Evento">
+                        <JFXButton fx:id="btn_create_event" buttonType="RAISED" onAction="#handleButtonEvent" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Crear Alerta">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>
@@ -357,7 +357,7 @@
                               <TableColumn fx:id="final_time_detail" prefWidth="129.0" text="Tiempo Final (s)" />
                               <TableColumn fx:id="emotion_detail" prefWidth="129.0" text="Emoción" />
                               <TableColumn fx:id="cardiac_detail" prefWidth="129.0" text="Coherencia Cardíaca" />
-                              <TableColumn fx:id="alert_detail" prefWidth="129.0" text="Evento" />
+                              <TableColumn fx:id="alert_detail" prefWidth="129.0" text="Alerta" />
                            </columns>
                            <opaqueInsets>
                               <Insets left="10.0" right="10.0" />
@@ -371,20 +371,6 @@
                   <HBox alignment="CENTER" prefHeight="72.0" prefWidth="825.0">
                      <children>
                         <JFXButton fx:id="btn_create_report" alignment="CENTER" buttonType="RAISED" onAction="#handleButtonReport" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Crear Reporte">
-                           <opaqueInsets>
-                              <Insets />
-                           </opaqueInsets>
-                           <cursor>
-                              <Cursor fx:constant="HAND" />
-                           </cursor>
-                           <font>
-                              <Font name="Arial Rounded MT Bold" size="12.0" />
-                           </font>
-                           <HBox.margin>
-                              <Insets left="10.0" right="10.0" />
-                           </HBox.margin>
-                        </JFXButton>
-                        <JFXButton fx:id="btn_segment_report" alignment="CENTER" buttonType="RAISED" onAction="#handleButtonExportSegment" prefHeight="31.0" prefWidth="147.0" style="-fx-border-color: white; -fx-border-radius: 30; -fx-background-color: #d8d7f6; -fx-background-radius: 30;" text="Exportar Segmento">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>

@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SignalController {
+
+
     Signal signal;
     Float ratio_coherence;
     String emotion;
@@ -270,4 +272,9 @@ public class SignalController {
     public int getN_segment() {
         return n_segment;
     }
+
+    public void setSignal(Signal signal) {
+        this.signal = signal;
+    }
+
 }

@@ -204,6 +204,9 @@ public class ANSController extends CanalModel {
 
     //Proyecto
     Project project;
+    String sample = "1000";
+    String window = "20";
+    String shif = "1";
 
 
     @Override
@@ -268,7 +271,7 @@ public class ANSController extends CanalModel {
         this.btn_create_event.setDisable(true);
         this.btn_process_signal.setDisable(true);
         this.combobox_emotions.setDisable(true);
-        this.btn_segment_report.setDisable(true);
+        //this.btn_segment_report.setDisable(true);
         this.slide_chart.setDisable(true);
 
         //Agregando listener para cada fila de la tabla de detalles
@@ -279,7 +282,7 @@ public class ANSController extends CanalModel {
                 if(table_detail.getSelectionModel().getSelectedItem() != null)
                 {
                     segmentSignal = table_detail.getSelectionModel().getSelectedItem();
-                    btn_segment_report.setDisable(false);
+                    //btn_segment_report.setDisable(false);
                     System.out.println(segmentSignal.getHr_max());
                 }
             }
@@ -399,17 +402,19 @@ public class ANSController extends CanalModel {
     }
 
     public void get_signal_rest(String path){
+        //Ruta completa
+        String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + sample + "/" + window + "/" + shif;
+
+        // Instanciando controlador de señal
+        signalController = new SignalController();
+        signalController.create_signal(route_api);
 
         //Obteniendo segmentos a analizar de la señal
         Double start_time = signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionX() / timelineElement.getWidth();
         Double end_time = start_time + signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionWidth() / timelineElement.getWidth();
 
-        //Ruta completa
-        String route_api = "http://127.0.0.1:5000/heart/" + path + "/" + "1000";
 
-        // Instanciando controlador de señal
-        signalController = new SignalController();
-        signalController.create_signal(route_api);
+
         this.path_signal = path;
         this.source_name = Paths.get(path).getFileName().toString();
 
@@ -417,7 +422,7 @@ public class ANSController extends CanalModel {
             //update application thread
             openSourceThread(path);
             addEventTag();
-            //Desactivando botón procesar señal y activando opción de crear evento
+            //Desactivando botón procesar señal y activando opción de crear alerta
             this.btn_process_signal.setDisable(true);
             this.btn_create_event.setDisable(false);
 
@@ -425,7 +430,7 @@ public class ANSController extends CanalModel {
         });
     }
 
-    public void dialog_project_create(String path){
+    public void dialog_project_create(){
         Dialog<Project> dialog = new Dialog<>();
         dialog.setTitle("Información del insumo");
         dialog.setHeaderText("Por favor, ingrese sigueintes datos de la señal cardíaca…");
@@ -433,11 +438,11 @@ public class ANSController extends CanalModel {
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         Label sampleLabel = new Label("Frecuencia de Muestreo");
-        TextField sampleRate = new TextField("1000.0");
+        TextField sampleRate = new TextField("1000");
         Label windowLabel = new Label("Ventana de Procesamiento");
-        TextField windowSampling = new TextField("20.0");
+        TextField windowSampling = new TextField("20");
         Label shifLabel = new Label("Precisión de Procesamiento");
-        TextField shifSampling = new TextField("1.0");
+        TextField shifSampling = new TextField("1");
 
         dialogPane.setContent(new VBox(8, sampleLabel, sampleRate, windowLabel, windowSampling, shifLabel, shifSampling));
         Platform.runLater(sampleRate::requestFocus);
@@ -446,11 +451,16 @@ public class ANSController extends CanalModel {
 
         dialog.setResultConverter((ButtonType button) -> {
             if (button == ButtonType.OK) {
-                project = new Project(this.getName(), this.getProjectDir(), 1000.0, 20.0, 1.0);
-                get_signal_rest(path);
+                this.sample = sampleRate.getText();
+                this.window = windowSampling.getText();
+                this.shif = shifSampling.getText();
+                project = new Project(this.getName(), this.getProjectDir(), Double.parseDouble(sample),
+                        Double.parseDouble(window), Double.parseDouble(shif) );
+
 
             }
-            return null;
+
+          return null;
         });
         Optional<Project> optionalResult = dialog.showAndWait();
         optionalResult.ifPresent((Project results) -> {
@@ -479,7 +489,7 @@ public class ANSController extends CanalModel {
         MFXTextField code = new MFXTextField();
         code.setFloatingText("Cargando señal...");
         MFXTextField desc = new MFXTextField();
-        desc.setFloatingText("Ingrese una descripción del evento");
+        desc.setFloatingText("Ingrese una descripción de la alerta");
 
         VBox container = new VBox();
         container.setAlignment(Pos.CENTER);
@@ -988,7 +998,6 @@ public class ANSController extends CanalModel {
     }
 
     public void set_data_abstact(double millis){
-        System.out.println("acaaa");
         alert.setText("Descripción: " + alert_task );
         cant_segmento_panel.setText("N° Segmento: " + segment_time);
         cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
@@ -1020,7 +1029,7 @@ public class ANSController extends CanalModel {
                 TimelineTag timelineTag = new TimelineTag(
                         this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
                         this.timelineElement.getRectangle().getWidth() * partial_final_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000) - this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
-                        "Evento " + i.toString(),
+                        "Alerta " + i.toString(),
                         "Coherencia Cardíaca de " + partial_ratio_coherence,
                         partial_initial_time * 1000,
                         partial_final_time * 1000 - partial_initial_time * 1000,
@@ -1056,11 +1065,16 @@ public class ANSController extends CanalModel {
     //Método que procesa la señal ingresada
     @FXML
     void handleButtonProcessSignal(ActionEvent e){
+        dialog_project_create();
         // Create a background Task
         Task<Void> task = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
-                dialog_project_create(path_signal);
+                get_signal_rest(path_signal);
+                Platform.runLater(() -> {
+
+                });
+
                 //get_signal_rest(path_signal);
                 return null;
             }
@@ -1096,7 +1110,7 @@ public class ANSController extends CanalModel {
         MFXTextField code = new MFXTextField();
         code.setFloatingText("Ingrese una codificación");
         MFXTextField desc = new MFXTextField();
-        desc.setFloatingText("Ingrese una descripción del evento");
+        desc.setFloatingText("Ingrese una descripción de la alerta");
 
         VBox container = new VBox();
         container.setAlignment(Pos.CENTER);
@@ -1107,7 +1121,7 @@ public class ANSController extends CanalModel {
                 .setShowMinimize(false)
                 .setShowAlwaysOnTop(false)
                 .setShowClose(false)
-                .setHeaderText("Añadir evento")
+                .setHeaderText("Añadir alerta")
                 .get();
 
         dialog = MFXGenericDialogBuilder.build(dialogContent)
@@ -1115,7 +1129,7 @@ public class ANSController extends CanalModel {
                 .initOwner(root.getScene().getWindow())
                 .initModality(Modality.APPLICATION_MODAL)
                 .setDraggable(true)
-                .setTitle("Añadir evento")
+                .setTitle("Añadir alerta")
                 .setOwnerNode((BorderPane) root.getScene().getRoot())
                 .setScrimPriority(ScrimPriority.WINDOW)
                 .setScrimOwner(true)
