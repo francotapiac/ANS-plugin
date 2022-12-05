@@ -28,7 +28,6 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -45,12 +44,10 @@ import javafx.stage.Modality;
 import java.io.*;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
-import java.time.LocalDate;
 import java.util.*;
 import java.util.Timer;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.FutureTask;
 
 import com.jfoenix.controls.JFXButton;
 import javafx.util.Pair;
@@ -180,7 +177,7 @@ public class ANSController extends CanalModel {
 
     // Controladores
     SignalController signalController;
-    LayoutController layoutController;
+    ChartController layoutController;
     VideoController videoController;
 
     ReportController reportController;
@@ -527,7 +524,7 @@ public class ANSController extends CanalModel {
 
 
         //Seteando layout principal (componente señal de VBox) con la señal leída
-        layoutController = new LayoutController();
+        layoutController = new ChartController();
         layoutController.initialize_panes(signalController);
 
         //*********************** Emoción de señal ***********************

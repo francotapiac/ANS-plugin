@@ -9,6 +9,4 @@ class TagDialogTest {
     @Test
     void isCompleted() {
     }
-
-
 }

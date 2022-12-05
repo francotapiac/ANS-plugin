@@ -2,7 +2,6 @@ package com.emcoders.ansplugin.controllers;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Label;
 import javafx.scene.control.TitledPane;
@@ -12,7 +11,7 @@ import java.text.DecimalFormat;
 import java.util.List;
 
 
-public class LayoutController extends VBox {
+public class ChartController extends VBox {
 
 
     // Paneles descripción, vídeo y señal
@@ -29,7 +28,7 @@ public class LayoutController extends VBox {
     private Integer min_width = 300;
     private Integer min_height = 200;
 
-    public LayoutController() {
+    public ChartController() {
 
     }
 

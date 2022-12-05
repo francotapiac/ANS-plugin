@@ -4,11 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LayoutControllerTest {
-
-    @Test
-    void initialize_pane_signal() {
-    }
+class ChartControllerTest {
 
     @Test
     void format_number() {
