@@ -227,6 +227,34 @@ public class SignalController {
         }
     }
 
+    public Integer calculateNumberAlertas(){
+        Integer count = 0;
+        Integer coherence_type = 0; //1 para coherencia < 0.5 y 2 para coherencia >= 0.5 y < 1
+        for (Pair<Alert,Feature> time_line: signal.getTime_line() ) {
+            Float ratio_coherence = time_line.getKey().getRatio_coherence();
+            if (count == 0 && ratio_coherence < 1) {
+                count++;
+                if (ratio_coherence < 0.5)
+                    coherence_type = 1;
+                else {
+                    coherence_type = 2;
+                }
+            }
+            if (count > 0 && ratio_coherence < 1) {
+                if (ratio_coherence < 0.5 && coherence_type == 2) {
+                    coherence_type = 1;
+                    count++;
+                } else if (ratio_coherence >= 0.5 && coherence_type == 1) {
+                    coherence_type = 2;
+                    count++;
+                }
+                System.out.println(ratio_coherence);
+                System.out.println(count);
+            }
+        }
+        return count;
+    }
+
     public List<Double> get_pointsSignal(){
         return this.signal.getPoints_signal();
     }

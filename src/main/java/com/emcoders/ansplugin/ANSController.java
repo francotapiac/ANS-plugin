@@ -39,6 +39,9 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.image.ImageView;
+import javafx.scene.text.Font;
+import javafx.scene.text.FontPosture;
+import javafx.scene.text.TextAlignment;
 import javafx.stage.Modality;
 
 import java.io.*;
@@ -327,15 +330,21 @@ public class ANSController extends CanalModel {
     }
 
     public void play() {
+        this.pushPlaySignal(null);
+        this.is_play = true;
     }
 
     public void stop() {
     }
 
     public void pause() {
+        this.pushPlaySignal(null);
+        this.is_play = false;
     }
 
     public void seek(double millis) {
+        System.out.println(millis);
+        slide_chart.setValue(millis/1000);
         //Se activan botones
         this.btn_set_emotion.setDisable(false);
         this.btn_create_event.setDisable(false);
@@ -350,15 +359,15 @@ public class ANSController extends CanalModel {
         initial_time_task = signalController.getPartial_start_time().toString();
         final_time_task = signalController.getPartial_end_time().toString();
         path_image_emotion =  ANSController.class.getResourceAsStream(signalController.getPath_image_emotion());
-        select_type_view_chart(type_view_chart);
+        //select_type_view_chart(type_view_chart);
         System.out.println(type_view_chart);
         Platform.runLater(() -> {
             //update application thread
-            xAxis.setLowerBound(lower_x_axis);
+          /*  xAxis.setLowerBound(lower_x_axis);
             System.out.println(upper_x_axis);
             xAxis.setUpperBound(upper_x_axis);
-            xAxis.setAutoRanging(false);
-            set_data_abstact(millis);
+            xAxis.setAutoRanging(false);*/
+           // set_data_abstact(millis);
         });
 
 
@@ -434,12 +443,26 @@ public class ANSController extends CanalModel {
         DialogPane dialogPane = dialog.getDialogPane();
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        Label sampleLabel = new Label("Frecuencia de Muestreo");
+        Label sampleLabel = new Label("Frecuencia de Muestreo (Hz)");
         TextField sampleRate = new TextField("1000");
-        Label windowLabel = new Label("Ventana de Procesamiento");
-        TextField windowSampling = new TextField("20");
-        Label shifLabel = new Label("Precisión de Procesamiento");
-        TextField shifSampling = new TextField("1");
+        Tooltip  tSample = new Tooltip("Número de muestras por unidad de tiempo para generar señal discreta");
+        tSample.setFont(Font.font("Verdana", FontPosture.REGULAR, 10));
+        tSample.setTextAlignment(TextAlignment.RIGHT);
+        sampleLabel.setTooltip(tSample);
+
+        Label windowLabel = new Label("Ventana de Tiempo (Milisegundos)");
+        TextField windowSampling = new TextField("20000");
+        Tooltip  tWindow = new Tooltip("Rango inicial para procesar señal cardíaca");
+        tWindow.setFont(Font.font("Verdana", FontPosture.REGULAR, 10));
+        tWindow.setTextAlignment(TextAlignment.RIGHT);
+        windowLabel.setTooltip(tWindow);
+
+        Label shifLabel = new Label("Tiempo de desplazamiento (Milisegundos)");
+        TextField shifSampling = new TextField("1000");
+        Tooltip  tShif = new Tooltip("Bloques de desplazamiento de la ventana sobre la señal");
+        tShif.setFont(Font.font("Verdana", FontPosture.REGULAR, 10));
+        tShif.setTextAlignment(TextAlignment.RIGHT);
+        shifLabel.setTooltip(tShif);
 
         dialogPane.setContent(new VBox(8, sampleLabel, sampleRate, windowLabel, windowSampling, shifLabel, shifSampling));
         Platform.runLater(sampleRate::requestFocus);
@@ -539,8 +562,10 @@ public class ANSController extends CanalModel {
         }
 
         //*********************** Análisis de señal ***********************
-        this.alert.setText("N° Alertas: " + signalController.getSignal().getCount_alerts().toString());
-        this.cant_segmento_panel.setText("Cantidad de Segmentos: " + signalController.getSignal().getTime_line().size());
+        //this.alert.setText("N° Alertas: " + signalController.getSignal().getCount_alerts().toString());
+        this.alert.setText("N° Alertas: " +   signalController.calculateNumberAlertas());
+
+        this.cant_segmento_panel.setText("Cantidad de Particiones: " + signalController.getSignal().getTime_line().size());
         Float initial_seg = format_number(signalController.getSignal().getStart_time_signal());
         Float final_seg = format_number(signalController.getSignal().getEnd_time_signal());
         segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
@@ -1250,6 +1275,7 @@ public class ANSController extends CanalModel {
 
     @FXML
     void pushPlaySignal(ActionEvent event) {
+
         if(is_play){
             is_play = false;
             timer.cancel();
@@ -1282,7 +1308,7 @@ public class ANSController extends CanalModel {
                         }
                     });
                 }
-            }, 0, 300);
+            }, 0, 1000);
         }
     }
 
