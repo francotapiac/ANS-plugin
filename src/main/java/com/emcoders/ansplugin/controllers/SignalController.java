@@ -32,16 +32,17 @@ public class SignalController {
         this.signal.calculate_min_max_fci();
     }
 
-    public void create_signal_excel(List<List<String>> data_signal, List<List<String>> signal_xls){
+    public void create_signal_excel(List<List<String>> data_signal, List<List<String>> data_signal_original, List<List<String>> signal_xls){
         this.signal = new Signal();
-        create_time_line_excel(data_signal);
-        signal.calculate_length_signal(signal.getTime_line());         // Obteniendo tiempo final de la señal
+        create_time_line_excel(data_signal_original,0);
+        create_time_line_excel(data_signal, 1);
+        signal.calculate_length_signal(signal.getPartitions_time_line());         // Obteniendo tiempo final de la señal
         create_signal_time(signal_xls);                             //Creando arreglos con puntos de la señal y tiempo
         signal.get_general_data();                                    //Obteniendo datos generales de la señal
         this.signal.calculate_min_max_fci();
     }
 
-        public void create_time_line_excel(List<List<String>> data_signal){
+        public void create_time_line_excel(List<List<String>> data_signal, int type){
         String[] list_names_times_features = {"vlf","lf","hf", "lf-hf","fft_total"};
         String[] list_names_freq_features = {"hr_mean","hr_min","hr_max", "sdnn","rmssd","sdsd"};
         for(int i = 1; i < data_signal.size(); i++){
@@ -78,11 +79,16 @@ public class SignalController {
             //Contando cantidad de emociones y agregando a lista
             signal.append_emotions_signal(name_emotion);
 
-            //Agregando características y alerta del segmento de la señla a la línea de tiempo
+            //Agregando características y alerta del segmento de la señal a la línea de tiempo
             Pair p = new Pair(alert, feature);
-            List<Pair<Alert,Feature>> time_line = signal.getTime_line();
-            time_line.add(p);
-            signal.setTime_line(time_line);
+           // List<Pair<Alert,Feature>> time_line = signal.getTime_line();
+            //time_line.add(p);
+            // Si es 0, se crea linea de tiempo con todas particiones
+            if(type == 0)
+                signal.getPartitions_time_line().add(p);
+            //En caso contrario, se crea con segmentos sin particiones
+            else
+                signal.getTime_line().add(p);
         }
     }
 
@@ -159,6 +165,8 @@ public class SignalController {
         }
     }
 
+    
+
     // Obtiene la señal original según los puntos del FCI. Esto, debido a que se busca acotar la señal mostrada
     public void create_points_signal_fci(){
         signal_points_fci = new ArrayList<>();
@@ -169,6 +177,61 @@ public class SignalController {
             signal_points_fci.add(signal.getSignal_points().get(index_times_points));
 
         }
+    }
+
+    public void set_manual_alert_aux(Double start_time_select_line, Double end_time_select_line, String name_emotion){
+        Float start_time_comparate = Float.parseFloat(start_time_select_line.toString());
+        Float end_time_comparate = Float.parseFloat(end_time_select_line.toString());
+
+        Float coherence = 0f;
+        List<Pair<String,Float>> freq_features = new ArrayList<>();
+        List<Pair<String,Float>> time_features = new ArrayList<>();
+        int initial_count_freq = 0;
+        int initial_count_time = 0;
+        int j = 0;
+
+
+        for (Pair<Alert,Feature> element: signal.getPartitions_time_line()) {
+
+            // Calculando coherencia cardíaca
+            coherence =  (coherence + element.getKey().getRatio_coherence())/2;
+
+            if(element.getValue().getStart_time() >= start_time_comparate && element.getValue().getEnd_time() <= end_time_comparate){
+
+
+                for (Pair<String, Float> freq: element.getValue().getFrequency_feature()) {
+                    if(initial_count_freq == 0){
+                        freq_features.add(new Pair<>(freq.getKey(), freq.getValue()));
+                    }
+                    else{
+                        Float new_freq = (freq_features.get(j).getValue() + freq.getValue())/2;
+                        freq_features.set(j,new Pair<>(freq.getKey(),new_freq));
+                        j++;
+                    }
+                }
+                initial_count_freq = 1;
+                j = 0;
+                for (Pair<String, Float> time: element.getValue().getTimes_feature()) {
+                    if(initial_count_time == 0){
+                        time_features.add(new Pair<>(time.getKey(), time.getValue()));
+                    }
+                    else{
+                        Float new_time = (time_features.get(j).getValue() + time.getValue())/2;
+                        time_features.set(j,new Pair<>(time.getKey(),new_time));
+                        j++;
+                    }
+                }
+                initial_count_time = 1;
+                j = 0;
+            }
+        }
+        Emotion emotion = new Emotion(name_emotion);
+        Alert alert =  new Alert(coherence,"", emotion, signal.format_number(start_time_comparate), signal.format_number(end_time_comparate));
+        alert.setText_alert("Alerta Manual");
+
+        Feature feature = new Feature(time_features, freq_features, signal.format_number(start_time_comparate), signal.format_number(end_time_comparate));
+        Pair<Alert,Feature> new_pair = new Pair<>(alert,feature);
+        signal.getTime_line().add(new_pair);
     }
 
     //Cambiando las alertas manuales en tabla
@@ -253,6 +316,21 @@ public class SignalController {
             }
         }
         return count;
+    }
+
+    public void removeAlert(Double start_time_select_line, Double end_time_select_line){
+        Float start_time_comparate = Float.parseFloat(start_time_select_line.toString());
+        Float end_time_comparate = Float.parseFloat(end_time_select_line.toString());
+        for (int i = 0; i < signal.getTime_line().size(); i++) {
+            System.out.println(start_time_comparate);
+            System.out.println(end_time_comparate);
+            System.out.println(signal.getTime_line().get(i).getValue().getStart_time());
+            System.out.println(signal.getTime_line().get(i).getValue().getEnd_time());
+            if (signal.getTime_line().get(i).getValue().getStart_time() >= start_time_comparate && signal.getTime_line().get(i).getValue().getEnd_time() <= end_time_comparate) {
+                signal.getTime_line().remove(i);
+                break;
+            }
+        }
     }
 
     public List<Double> get_pointsSignal(){

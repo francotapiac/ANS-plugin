@@ -20,6 +20,7 @@ public class Signal {
     private List<Double> signal_points = new ArrayList<>();
     private List<Double> times_points = new ArrayList<>();
     private List<Pair<Alert,Feature>> time_line;
+    private List<Pair<Alert,Feature>> partitions_time_line;
     private double start_time_signal;
     private double end_time_signal;
 
@@ -34,13 +35,15 @@ public class Signal {
     public Signal(){
         this.time_line = new ArrayList<>();
         this.emotions_signal = new ArrayList<>();
+        this.partitions_time_line = new ArrayList<>();
         this.cant_emotions_signal = new ArrayList<>();
     }
     public Signal(String path_api){
         //get_signal( System.getProperty("user.dir")  + "\\signals\\ecg.csv");
         JSONArray dataObject = get_json_time_line(path_api);
-        this.time_line = create_time_line_signal(dataObject);       // Creando línea de tiempo de la señal
-        calculate_length_signal(time_line);                             // Obteniendo tiempo final de la señal
+        this.time_line = create_time_line_signal_aux(dataObject);       // Creando línea de tiempo de la señal con segmentos
+        this.partitions_time_line = create_time_line_signal(dataObject);// Creando línea de tiempo con todas las particiones
+        calculate_length_signal(partitions_time_line);                             // Obteniendo tiempo final de la señal
         create_signal_time(dataObject);                             //Creando arreglos con puntos de la señal y tiempo
         get_general_data();                                         //Obteniendo datos generales de la señal
     }
@@ -149,6 +152,57 @@ public class Signal {
             //Agregando características y alerta del segmento de la señla a la línea de tiempo
             Pair p = new Pair(alert, feature);
             time_line.add(p);
+
+        }
+
+        return time_line;
+    }
+
+    public List<Pair<Alert,Feature>> create_time_line_signal_aux(JSONArray dataObject){
+        List<Pair<Alert,Feature>> time_line = new ArrayList<>();
+        this.emotions_signal = new ArrayList<>();
+        this.cant_emotions_signal = new ArrayList<>();
+        int index_prev_segment = -1;
+        String prevCoherenceDescription = "";
+        Float promCoherence = 0.f;
+        for (int i =0; i < dataObject.size()-6; i++) {
+
+
+            //Obteniendo datos de json
+            JSONObject jsonObject = (JSONObject) dataObject.get(i);
+            float start_time = format_number(Float.parseFloat(jsonObject.get("start_time").toString()));
+            float end_time = format_number(Float.parseFloat(jsonObject.get("end_time").toString()));
+            String name_emotion = set_predominant_emotion_name(jsonObject.get("emotion").toString());
+
+            float ratio_coherence = Float.parseFloat(jsonObject.get("ratio_coherence").toString());
+            List<Pair<String, Float>> times_features = json_object_to_pair_float(jsonObject.get("time_df"));
+            List<Pair<String, Float>> freq_features = json_object_to_pair_float(jsonObject.get("freq_df"));
+            System.out.println(times_features);
+            System.out.println(freq_features);
+            //Creando objetos para cada segmento analizado
+            Emotion emotion = new Emotion(name_emotion);
+            Feature feature = new Feature(times_features, freq_features, start_time, end_time);
+            Alert alert = new Alert(ratio_coherence, "", emotion, start_time, end_time);
+
+            //Contando cantidad de emociones y agregando a lista
+            append_emotions_signal(name_emotion);
+
+            if(alert.getDescription().equals(prevCoherenceDescription)){
+                promCoherence = format_number((promCoherence + alert.getRatio_coherence())/2);
+                time_line.get(index_prev_segment).getKey().setEnd_time(end_time);
+                time_line.get(index_prev_segment).getValue().setEnd_time(end_time);
+                time_line.get(index_prev_segment).getKey().setRatio_coherence(promCoherence);
+
+            }
+            else{
+                index_prev_segment++;
+                prevCoherenceDescription = alert.getDescription();
+                promCoherence = format_number(alert.getRatio_coherence());
+                //Agregando características y alerta del segmento de la señla a la línea de tiempo
+                Pair p = new Pair(alert, feature);
+                time_line.add(p);
+            }
+
 
         }
 
@@ -428,5 +482,13 @@ public class Signal {
 
     public void setMin_max_fci_point(Pair<Double, Double> min_max_fci_point) {
         this.min_max_fci_point = min_max_fci_point;
+    }
+
+    public List<Pair<Alert, Feature>> getPartitions_time_line() {
+        return partitions_time_line;
+    }
+
+    public void setPartitions_time_line(List<Pair<Alert, Feature>> partitions_time_line) {
+        this.partitions_time_line = partitions_time_line;
     }
 }

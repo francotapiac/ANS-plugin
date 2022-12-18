@@ -38,4 +38,7 @@ public class Feature {
     }
 
 
+    public void setEnd_time(float end_time) {
+        this.end_time = end_time;
+    }
 }

@@ -18,15 +18,13 @@ public class CardiacCoherence {
         this.end_time = end_time;
     }
 
-    public String create_description(float ratio_coherence){
-        if(ratio_coherence < 0.5)
+    public String create_description(float ratio_coherence) {
+        if (ratio_coherence < 0.5)
             return "Incoherencia cardíaca";
-        else if(ratio_coherence >= 0.5 && ratio_coherence < 1.0)
+        else if (ratio_coherence >= 0.5 && ratio_coherence < 1.0)
             return "Baja coherencia cardíaca";
-        else if(ratio_coherence >= 0.1 && ratio_coherence < 2.0)
-            return "Coherencia cardíaca";
         else
-            return "Alta coherencia cardíaca";
+            return "Coherencia cardíaca";
     }
 
     public String getId() {

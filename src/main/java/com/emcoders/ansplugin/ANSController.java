@@ -28,6 +28,7 @@ import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -415,11 +416,14 @@ public class ANSController extends CanalModel {
         signalController = new SignalController();
         signalController.create_signal(route_api);
 
+        //Guardando analisis
+        reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 0);
+        reportController.create_time_line_excel(signalController.getSignal().getPartitions_time_line(), getProjectDir(), 1);
+        reportController.create_signal_excel(this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), getProjectDir());
+
         //Obteniendo segmentos a analizar de la señal
         Double start_time = signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionX() / timelineElement.getWidth();
         Double end_time = start_time + signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionWidth() / timelineElement.getWidth();
-
-
 
         this.path_signal = path;
         this.source_name = Paths.get(path).getFileName().toString();
@@ -437,10 +441,10 @@ public class ANSController extends CanalModel {
     }
 
     public void dialog_project_create(){
-        Dialog<Project> dialog = new Dialog<>();
-        dialog.setTitle("Información del insumo");
-        dialog.setHeaderText("Por favor, ingrese sigueintes datos de la señal cardíaca…");
-        DialogPane dialogPane = dialog.getDialogPane();
+        Dialog<Project> dialogProject = new Dialog<>();
+        dialogProject.setTitle("Información del insumo");
+        dialogProject.setHeaderText("Por favor, ingrese sigueintes datos de la señal cardíaca…");
+        DialogPane dialogPane = dialogProject.getDialogPane();
         dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
         Label sampleLabel = new Label("Frecuencia de Muestreo (Hz)");
@@ -469,7 +473,7 @@ public class ANSController extends CanalModel {
         Platform.runLater(windowSampling::requestFocus);
         Platform.runLater(shifSampling::requestFocus);
 
-        dialog.setResultConverter((ButtonType button) -> {
+        dialogProject.setResultConverter((ButtonType button) -> {
             if (button == ButtonType.OK) {
                 this.sample = sampleRate.getText();
                 this.window = windowSampling.getText();
@@ -478,11 +482,13 @@ public class ANSController extends CanalModel {
                         Double.parseDouble(window), Double.parseDouble(shif) );
 
 
+            } else if (button == ButtonType.CANCEL) {
+                dialogProject.close();
             }
 
-          return null;
+            return null;
         });
-        Optional<Project> optionalResult = dialog.showAndWait();
+        Optional<Project> optionalResult = dialogProject.showAndWait();
         optionalResult.ifPresent((Project results) -> {
 
         });
@@ -602,8 +608,8 @@ public class ANSController extends CanalModel {
 
         //*********************** Tabla de detalles ***********************
         create_table_detail(true);
-        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
-
+        //reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
+       // reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 1);
 
         //Render
         this.slide_chart.setDisable(false);
@@ -624,16 +630,20 @@ public class ANSController extends CanalModel {
 
         signalController = new SignalController();
         this.source_name = Paths.get(path).getFileName().toString();
-        String complete_path = path + ".xls";
-        if(complete_path != "" && complete_path != null ){
-            File file = new File(complete_path);
+        //String complete_path = path + ".xls";
+        String complete_path_segment_time_line = getProjectDir() + "/" + "senalAnalisis.xls";
+        String complete_path_partitions_time_line = getProjectDir() + "/" + "senalParticiones.xls";
+        String complete_path_signal = getProjectDir() + "/" + "fciPoints.xls";
+        if(complete_path_segment_time_line != "" && complete_path_segment_time_line != null ){
+            File file = new File(complete_path_segment_time_line);
             if(file.exists()){
-                // Instanciando controlador de señal
-                List<List<String>> signal_xls = reportController.read_xls(path + ".xls",true,0);
-                List<List<String>> time_line_xls = reportController.read_xls(path + ".xls",true,1);
+                // Instanciando controlador de seña
+                List<List<String>> time_line_xls = reportController.read_xls(complete_path_segment_time_line,true,1);
+                List<List<String>> time_line_original_xls = reportController.read_xls(complete_path_partitions_time_line,true,1);
+                List<List<String>> signal_xls = reportController.read_xls(complete_path_signal,true,1);
                 System.out.println("time: \n " + time_line_xls);
                 System.out.println("Signal: \n " + signal_xls);
-                signalController.create_signal_excel(time_line_xls, signal_xls);
+                signalController.create_signal_excel(time_line_xls, time_line_original_xls, signal_xls);
                 Platform.runLater(() -> {
                     //update application thread
                     openSourceThread(path);
@@ -682,6 +692,8 @@ public class ANSController extends CanalModel {
         );
     }
 
+
+
     public void requestUpdate(String source, String code, String desc, double initTimeInMS, double lengthInMS) {
      /*
           Method to update an existing tag on the timeline
@@ -692,6 +704,7 @@ public class ANSController extends CanalModel {
          * @param double millisecond length
          * @return void
          */
+
         TimelineTag tagToUpdate = null;
         for (TimelineTag t : this.getTags()) {
             if(
@@ -748,10 +761,14 @@ public class ANSController extends CanalModel {
         this.timelineElement.getChildren().remove(tagToDelete);
         // Remove timelineTag selected property
         this.tagsSelected.remove(this.tagsSelected.indexOf(tagToDelete.selectedProperty()));
+        signalController.removeAlert(initTimeInMS/1000, (initTimeInMS + lengthInMS)/1000);
+        create_table_detail(false);
+        reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 0);
     }
 
     @Override
     public void showTagDetail(String source, String code, double initTimeInMS, double lengthInMS) {
+
         /*
           Method to check a timeline's tag detail
           @param string source path
@@ -760,6 +777,11 @@ public class ANSController extends CanalModel {
          * @param double millisecond length
          * @return void
          */
+
+        String nameAlert = "";
+        String description = "";
+        signalController.get_particular_data_charge_line_time(initTimeInMS);
+
         TimelineTag tagToUpdate = null;
         for (TimelineTag t : this.getTags()) {
             if(
@@ -767,18 +789,42 @@ public class ANSController extends CanalModel {
                             initTimeInMS == t.getInitTimeInMS() &&
                             lengthInMS == t.getLengthInMS()
             ){
-                tagToUpdate = t;
+                nameAlert = t.getCode();
+                description = t.getDescription();
+
                 break;
             }
         }
 
-        if (tagToUpdate == null) return;
-        this.tagDialog.setCodeText(tagToUpdate.getCode());
-        this.tagDialog.setDescText(tagToUpdate.getDescription());
-        this.tagDialog.showAndWait();
+        Dialog<Project> dialogProject = new Dialog<>();
+        dialogProject.setTitle("Descripción de alerta");
+        dialogProject.setHeaderText(nameAlert);
+        DialogPane dialogPane = dialogProject.getDialogPane();
+        dialogPane.getButtonTypes().addAll(ButtonType.OK);
 
-        if (!this.tagDialog.isCompleted()) return;
 
+        //Label nameLabel = new Label("Nombre de alerta: " + nameAlert);
+        Label descriptionLabel = new Label("Descripción de alerta: " + description);
+        Label initialTime = new Label("Tiempo inicial (ms): " + format_number(initTimeInMS/1000));
+        Label finalTime = new Label("Tiempo Final (ms): " + format_number(initTimeInMS/1000 + lengthInMS/1000));
+        Label emotion = new Label("Emoción: " + signalController.getEmotion());
+        Label coherence = new Label("Coherencia cardíaca: "  + signalController.getCardiac_coherence_description());
+        //System.out.println( ANSController.class.getResourceAsStream(signalController.getPath_image_emotion()));
+        //image_emotion.setImage(new Image( ANSController.class.getResourceAsStream(signalController.getPath_image_emotion())));
+
+        dialogPane.setContent(new VBox(8, descriptionLabel, initialTime, finalTime,  coherence, emotion));
+
+        dialogProject.setResultConverter((ButtonType button) -> {
+            if (button == ButtonType.OK ) {
+                dialogProject.close();
+            }
+
+            return null;
+        });
+        Optional<Project> optionalResult = dialogProject.showAndWait();
+        optionalResult.ifPresent((Project results) -> {
+
+        });
 
     }
 
@@ -1068,7 +1114,7 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonReport(ActionEvent event) {
-        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
+        reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 0);
 
         //Creating a dialog
         Dialog<String> dialog = new Dialog<String>();
@@ -1076,7 +1122,7 @@ public class ANSController extends CanalModel {
         dialog.setTitle("Información");
         ButtonType type = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
         //Setting the content of the dialog
-        dialog.setContentText("Se ha creado el reporte en el directorio: " + this.getProjectDir() + " \n Con el nombre: " + this.source_name + ".xls");
+        dialog.setContentText("Se ha creado el reporte en el directorio: " + this.getProjectDir() + " \n Con el nombre: " + "senalAnalisis.xls");
         //Adding buttons to the dialog pane
         dialog.getDialogPane().getButtonTypes().add(type);
         dialog.showAndWait();
@@ -1087,6 +1133,7 @@ public class ANSController extends CanalModel {
     //Método que procesa la señal ingresada
     @FXML
     void handleButtonProcessSignal(ActionEvent e){
+        VBox vBoxCharge = new VBox();
         dialog_project_create();
         // Create a background Task
         Task<Void> task = new Task<Void>() {
@@ -1105,15 +1152,27 @@ public class ANSController extends CanalModel {
         //Mientras se ejecuta la tarea
         task.setOnRunning(wse -> {
            dialog_charge();
+           vBoxCharge.getChildren().add(new Label("Procesando señal"));
+           dialogContent.setContent(vBoxCharge);
+            if(signalController.getSignal()!= null) {
+                vBoxCharge.getChildren().add(new Label("Respaldando Procesamiento"));
+                dialogContent.setContent(vBoxCharge);
+                vBoxCharge.getChildren().add(new Label("Generando alertas automáticas"));
+                dialogContent.setContent(vBoxCharge);
+            }
+
+
         });
 
         // This method allows us to handle any Exceptions thrown by the task
         task.setOnFailed(wse -> {
             wse.getSource().getException().printStackTrace();
+            dialogContent.setContent(new Label("Error: No se ha podido procesar correctamente la señal"));
         });
 
         // If the task completed successfully, perform other updates here
         task.setOnSucceeded(wse -> {
+            dialogContent.setContent(new Label("Se ha procesado la señal exitosamente"));
             System.out.println("Done!");
             dialog.close();
         });
@@ -1129,67 +1188,73 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonEvent(ActionEvent e){
-        MFXTextField code = new MFXTextField();
-        code.setFloatingText("Ingrese una codificación");
-        MFXTextField desc = new MFXTextField();
-        desc.setFloatingText("Ingrese una descripción de la alerta");
+        this.btn_set_emotion.setDisable(true);
+        Dialog<Project> dialogProject = new Dialog<>();
+        dialogProject.setTitle("Alerta manual");
+        dialogProject.setHeaderText("Por favor, ingrese los siguientes datos para crear una alerta manual");
+        DialogPane dialogPane = dialogProject.getDialogPane();
+        dialogPane.getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
-        VBox container = new VBox();
-        container.setAlignment(Pos.CENTER);
-        container.getChildren().addAll(code, desc);
+        Label codeLabel = new Label("Nombre de alerta");
+        TextField code = new TextField();
+        Tooltip  tCode = new Tooltip("Codificación de la alerta");
+        tCode.setFont(Font.font("Verdana", FontPosture.REGULAR, 10));
+        tCode.setTextAlignment(TextAlignment.RIGHT);
+        codeLabel.setTooltip(tCode);
 
-        dialogContent = MFXGenericDialogBuilder.build()
-                .setContent(container)
-                .setShowMinimize(false)
-                .setShowAlwaysOnTop(false)
-                .setShowClose(false)
-                .setHeaderText("Añadir alerta")
-                .get();
+        Label descriptionLabel = new Label("Ingrese la descripción de la alerta");
+        TextField desc = new TextField();
+        Tooltip  tDescription = new Tooltip("Información sobre la alerta generada");
+        tDescription.setFont(Font.font("Verdana", FontPosture.REGULAR, 10));
+        tDescription.setTextAlignment(TextAlignment.RIGHT);
+        codeLabel.setTooltip(tDescription);
 
-        dialog = MFXGenericDialogBuilder.build(dialogContent)
-                .toStageDialogBuilder()
-                .initOwner(root.getScene().getWindow())
-                .initModality(Modality.APPLICATION_MODAL)
-                .setDraggable(true)
-                .setTitle("Añadir alerta")
-                .setOwnerNode((BorderPane) root.getScene().getRoot())
-                .setScrimPriority(ScrimPriority.WINDOW)
-                .setScrimOwner(true)
-                .get();
+        Label emotionLabel = new Label("Ingrese emoción para alerta");
 
-        dialogContent.addActions(
-                Map.entry(new MFXButton("Añadir"), event -> {
 
-                        if(code.getText().length() == 0 || desc.getText().length() == 0) return;
+        dialogPane.setContent(new VBox(8,codeLabel, code, descriptionLabel, desc, emotionLabel, this.combobox_emotions));
+        Platform.runLater(code::requestFocus);
+        Platform.runLater(desc::requestFocus);
 
-                        TimelineTag timelineTag = new TimelineTag(this.timelineElement.getSelectionX(),
-                                this.timelineElement.getSelectionWidth(),
-                                code.getText(),
-                                desc.getText(),
-                                signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionX() / this.timelineElement.getWidth(),
-                                signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionWidth() / this.timelineElement.getWidth(),
-                                Color.LIGHTBLUE,
-                                this.getName(),
-                                Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString());
-                        this.timelineElement.getChildren().add(timelineTag);
-                        this.getTags().add(timelineTag);
-                        root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTag.getCode(),
-                                timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS()));
+        dialogProject.setResultConverter((ButtonType button) -> {
+            if (button == ButtonType.OK && (code.getText().length() != 0 || desc.getText().length() != 0 || this.combobox_emotions.getValue() != "")) {
 
-                    Double start_time = signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionX() / this.timelineElement.getWidth();
-                    Double end_time = start_time + signalController.getSignal().getEnd_time_signal() * 1000 * this.timelineElement.getSelectionWidth() / this.timelineElement.getWidth();
-                    // Seteando valores de alerta
-                    this.signalController.set_manual_alert(start_time, end_time );
-                    //Modificando tabla con nueva alerta en segmento específico
-                    create_table_detail(false);
-                    reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
-                    dialog.close();
 
-                }), Map.entry( new MFXButton("Cancelar"), event -> {
-                    dialog.close();
-                })
-        );
-        dialog.show();
+                TimelineTag timelineTag = new TimelineTag(this.timelineElement.getSelectionX(),
+                        this.timelineElement.getSelectionWidth(),
+                        code.getText(),
+                        desc.getText(),
+                        this.timelineElement.getSourceLength() * 1000 * this.timelineElement.getSelectionX() / this.timelineElement.getWidth(),
+                        this.timelineElement.getSourceLength() * 1000 * this.timelineElement.getSelectionWidth() / this.timelineElement.getWidth(),
+                        Color.LIGHTBLUE,
+                        this.getName(),
+                        Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString());
+                this.timelineElement.getChildren().add(timelineTag);
+                this.getTags().add(timelineTag);
+                root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTag.getCode(),
+                        timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS()));
+                System.out.println( this.timelineElement.getSourceLength());
+                System.out.println(signalController.getSignal().getEnd_time_signal());
+
+                // Seteando valores de alerta
+                this.signalController.set_manual_alert_aux(timelineTag.getInitTimeInMS()/1000, (timelineTag.getInitTimeInMS()+ timelineTag.getLengthInMS())/1000, this.combobox_emotions.getValue() );
+                //Modificando tabla con nueva alerta en segmento específico
+                create_table_detail(false);
+                reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 0);
+                this.btn_set_emotion.setDisable(false);
+                dialogProject.close();
+            } else if (button == ButtonType.CANCEL) {
+                dialogProject.close();
+            }
+
+            return null;
+        });
+        Optional<Project> optionalResult = dialogProject.showAndWait();
+        optionalResult.ifPresent((Project results) -> {
+
+        });
+
+
 
     }
 
@@ -1226,7 +1291,7 @@ public class ANSController extends CanalModel {
 
         //Modificando tabla con nueva emoción en segmento específico
         create_table_detail(false);
-        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
+        reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 0);
 
         //Modificando Labels
         emotion_task = signalController.getEmotion();
