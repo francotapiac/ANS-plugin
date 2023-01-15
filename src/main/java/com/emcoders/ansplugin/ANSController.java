@@ -188,6 +188,7 @@ public class ANSController extends CanalModel {
 
     Float millis;
     TimelineElement timelineElement;
+    TimelineElement timelineElementEmotion;
     Integer segment_time;
     String alert_task;
     String emotion_task;
@@ -210,6 +211,13 @@ public class ANSController extends CanalModel {
     String shif = "1";
 
 
+    /************************************************
+     1.    Métodos heredados de proyecto EMBox-Core
+     ***********************************************/
+
+    /*
+    1.1. Métodos inicializar componentes en vista
+     */
     @Override
     public Pane getLayout() {
         /*
@@ -228,11 +236,7 @@ public class ANSController extends CanalModel {
         } catch(IOException e) {
             e.printStackTrace();
         }
-       initPlugin();
-
-
-
-
+        initPlugin();
         return this.root;
     }
 
@@ -291,9 +295,90 @@ public class ANSController extends CanalModel {
 
         //Timer del render para ver chart como vídeo
         this.timer = new Timer();
+    }
 
-        //seek(13.6);
+    /*
+    1.2. Métodos para reproducir cursor en banda
+     */
 
+    // Inicializa cursor en banda
+    public void play() {
+        this.pushPlaySignal(null);
+        this.is_play = true;
+    }
+
+    // Detiene cursor en banda
+    public void stop() {
+    }
+
+    // Pausa cursor en banda
+    public void pause() {
+        this.pushPlaySignal(null);
+        this.is_play = false;
+    }
+
+    // Lee cada elemento en banda tras mover el cursor
+    public void seek(double millis) {
+        System.out.println(millis);
+        slide_chart.setValue(millis/1000);
+        //Se activan botones
+        this.btn_set_emotion.setDisable(false);
+        this.btn_create_event.setDisable(false);
+        this.combobox_emotions.setDisable(false);
+
+        this.millis = format_number(millis);
+        signalController.get_particular_data(format_number(millis));
+        alert_task = signalController.getCardiac_coherence_description();
+        segment_time = signalController.getN_segment();
+        emotion_task = signalController.getEmotion();
+        cardiac_coherence_task = signalController.getRatio_coherence().toString();
+        initial_time_task = signalController.getPartial_start_time().toString();
+        final_time_task = signalController.getPartial_end_time().toString();
+        path_image_emotion =  ANSController.class.getResourceAsStream(signalController.getPath_image_emotion());
+        //select_type_view_chart(type_view_chart);
+        System.out.println(type_view_chart);
+        Platform.runLater(() -> {
+            //update application thread
+          /*  xAxis.setLowerBound(lower_x_axis);
+            System.out.println(upper_x_axis);
+            xAxis.setUpperBound(upper_x_axis);
+            xAxis.setAutoRanging(false);*/
+            // set_data_abstact(millis);
+        });
+        //System.out.println(millis);
+    }
+
+    /*
+    1.3. Métodos lectura de archivos
+     */
+
+    // Comprueba si puede abrir archivo con señal
+    public boolean canOpen(String path) {
+        if(path != "" && path != null){
+            File file = new File(path);
+            if(file.exists())
+                return true;
+        }
+        return false;
+    }
+
+    // Abre un archivo con la señal cardíaca según la ruta
+    public TimelineElement openSource(String path) {
+
+        //Activando botón
+        this.btn_process_signal.setDisable(false);
+
+        this.path_signal = path;
+        this.source_name = Paths.get(path).getFileName().toString();
+
+        //Párametros de la línea de tiempo
+        Double sourceLength = get_length_signal_file(path);
+        timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
+        this.root.fireEvent(
+                new AddSourceEvent(this.getProjectDir() + "\\" + this.source_name, this.getName())
+        );
+
+        return this.timelineElement;
     }
 
     public ImageView create_image_btn_render(String path_image){
@@ -322,91 +407,16 @@ public class ANSController extends CanalModel {
         }
     }
 
-    public void show_panels(){
-
-
-    }
     public ArrayList<TimelineTag> getTags() {
         return this.tags;
     }
 
-    public void play() {
-        this.pushPlaySignal(null);
-        this.is_play = true;
-    }
-
-    public void stop() {
-    }
-
-    public void pause() {
-        this.pushPlaySignal(null);
-        this.is_play = false;
-    }
-
-    public void seek(double millis) {
-        System.out.println(millis);
-        slide_chart.setValue(millis/1000);
-        //Se activan botones
-        this.btn_set_emotion.setDisable(false);
-        this.btn_create_event.setDisable(false);
-        this.combobox_emotions.setDisable(false);
-
-        this.millis = format_number(millis);
-        signalController.get_particular_data(format_number(millis));
-        alert_task = signalController.getCardiac_coherence_description();
-        segment_time = signalController.getN_segment();
-        emotion_task = signalController.getEmotion();
-        cardiac_coherence_task = signalController.getRatio_coherence().toString();
-        initial_time_task = signalController.getPartial_start_time().toString();
-        final_time_task = signalController.getPartial_end_time().toString();
-        path_image_emotion =  ANSController.class.getResourceAsStream(signalController.getPath_image_emotion());
-        //select_type_view_chart(type_view_chart);
-        System.out.println(type_view_chart);
-        Platform.runLater(() -> {
-            //update application thread
-          /*  xAxis.setLowerBound(lower_x_axis);
-            System.out.println(upper_x_axis);
-            xAxis.setUpperBound(upper_x_axis);
-            xAxis.setAutoRanging(false);*/
-           // set_data_abstact(millis);
-        });
 
 
 
-        //System.out.println(millis);
-    }
 
 
-    // Comprueba si puede abrir archivo con señal
-    public boolean canOpen(String path) {
-        if(path != "" && path != null){
-            File file = new File(path);
-            if(file.exists())
-                return true;
-        }
-        return false;
-    }
 
-
-    public TimelineElement openSource(String path) {
-
-        //Activando botón
-        this.btn_process_signal.setDisable(false);
-
-        this.path_signal = path;
-        this.source_name = Paths.get(path).getFileName().toString();
-
-        //Párametros de la línea de tiempo
-        Double sourceLength = get_length_signal_file(path);
-        timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
-        this.root.fireEvent(
-                new AddSourceEvent(this.getProjectDir() + "\\" + this.source_name, this.getName())
-        );
-
-        return this.timelineElement;
-
-
-    }
 
     public void get_signal_rest(String path){
         //Ruta completa
