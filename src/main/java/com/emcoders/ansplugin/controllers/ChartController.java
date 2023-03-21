@@ -90,7 +90,7 @@ public class ChartController extends VBox {
             this.series_points = new XYChart.Series();
 
             //Modificando parámetros del gráfico
-            this.series_fci.setName("Frecuencia Cardíaca Instantánea (FCI)");
+            this.series_fci.setName("FCI");
             this.series_points.setName("Señal Cardíaca");
 
             //Obteniendo puntos de la señal y tiempos

@@ -1,5 +1,6 @@
 package com.emcoders.ansplugin;
 
+import com.emcoders.ansplugin.components.TableDetail;
 import com.emcoders.ansplugin.components.TagDialog;
 import com.emcoders.ansplugin.controllers.*;
 import com.emcoders.ansplugin.models.Emotion;
@@ -30,11 +31,16 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.Image;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.*;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -54,6 +60,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 
 import com.jfoenix.controls.JFXButton;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
 import javafx.util.Pair;
 
 import javax.swing.*;
@@ -62,6 +70,9 @@ import javax.swing.*;
 public class ANSController extends CanalModel {
     @FXML
     private Label prueba;
+
+    @FXML
+    private Label name_project;
 
     // FXML Elements
     @FXML
@@ -100,6 +111,10 @@ public class ANSController extends CanalModel {
 
     // Panel de Tabla Detalles
     @FXML
+    private JFXButton btnVerDetalle;
+    @FXML
+    private JFXButton btnModificarEmocion;
+    @FXML
     private AnchorPane detail_panel;
     @FXML
     private TableView<SegmentSignal> table_detail;
@@ -132,6 +147,19 @@ public class ANSController extends CanalModel {
     private JFXButton btn_process_signal;
     @FXML
     private JFXButton btn_segment_report;
+    @FXML
+    private JFXButton btnEdicion;
+    @FXML
+    private JFXButton btnFiltro;
+
+    boolean btnEdicionFlag;
+    String emotionNameFlag;
+    boolean btnFiltroFlag;
+    boolean btnEmotionSorpresaFlag;
+    boolean btnEmotionMiedoFlag;
+    boolean btnEmotionEnojoFlag;
+    boolean btnEmotionFelicidadFlag;
+    boolean btnEmotionTristezaFlag;
 
     //Botones render señal
     @FXML
@@ -151,6 +179,16 @@ public class ANSController extends CanalModel {
 
     Dialog<String> dialog_charge;
 
+    @FXML
+    private JFXButton btnEnojo;
+    @FXML
+    private JFXButton btnMiedo;
+    @FXML
+    private JFXButton btnFelicidad;
+    @FXML
+    private JFXButton btnSorpresa;
+    @FXML
+    private JFXButton btnTristeza;
     @FXML
     private RadioButton radio_general;
 
@@ -178,7 +216,9 @@ public class ANSController extends CanalModel {
 
     private String path_video = "";
     private String path_signal = "";
+    private String path_signal_emotion = "";
 
+    private int type_timeline = 0;
     // Controladores
     SignalController signalController;
     ChartController layoutController;
@@ -201,6 +241,7 @@ public class ANSController extends CanalModel {
     private ArrayList<BooleanProperty> tagsSelected = new ArrayList<>();
     SegmentSignal segmentSignal;
 
+    List<String> listNamesEmotions;
     // Instance state //
     private volatile boolean isLoaded = false;
 
@@ -224,12 +265,14 @@ public class ANSController extends CanalModel {
           Initial method. Which load the layout and perform the plugin init
           @return Pane
          */
+
+
         if (this.isLoaded) return null;
         this.isLoaded = true;
 
         //Cargando layout
         setName("ANS Plug-in");
-        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("page1.fxml"));
+        FXMLLoader fxmlLoader = new FXMLLoader(HelloApplication.class.getResource("layoutANS.fxml"));
         fxmlLoader.setController(this);
         try {
             this.root = fxmlLoader.load();
@@ -246,22 +289,33 @@ public class ANSController extends CanalModel {
         //*********************** Gráfico ***********************
 
         //Moviendo todos los paneles en su posición real
-        this.detail_panel.setLayoutX(this.pane_principal.getLayoutX());
-        this.detail_panel.setLayoutY(this.pane_principal.getLayoutY());
+        //this.detail_panel.setLayoutX(this.pane_principal.getLayoutX());
+        //this.detail_panel.setLayoutY(this.pane_principal.getLayoutY());
 
-        this.pane_principal.toFront();
+        //this.pane_principal.toFront();
         this.tagDialog = new TagDialog();
         this.reportController = new ReportController();
-        this.radio_general.setSelected(true);
+        //this.radio_general.setSelected(true);
+
+        //Lista de nombre de emociones
+        listNamesEmotions = new ArrayList<>();
+        listNamesEmotions.add("Sorpresa");
+        listNamesEmotions.add("Felicidad");
+        listNamesEmotions.add("Miedo");
+        listNamesEmotions.add("Enojo");
+        listNamesEmotions.add("Tristeza");
         ObservableList<String> items = FXCollections.observableArrayList();
         items.addAll("Sorpresa", "Felicidad", "Miedo", "Enojo", "Tristeza");
+
+
+        this.combobox_emotions = new ComboBox<>();
         this.combobox_emotions.getItems().addAll(items);
         this.combobox_emotions.setOnAction(e -> disable_combobox_emotion());
 
-        combobox_emotions.valueProperty().addListener((ov, p1, p2) -> {
+        /*combobox_emotions.valueProperty().addListener((ov, p1, p2) -> {
             System.out.println("Nueva Selección: " + p2);
             System.out.println("Vieja Selección: " + p1);
-        });
+        });*/
 
         //Agregando imagenes a botones de render de gráfico
         this.btn_play.setGraphic(create_image_btn_render("images/play.png"));
@@ -272,14 +326,73 @@ public class ANSController extends CanalModel {
         this.is_play = false;
 
         //Se desctivan botones
-        this.btn_set_emotion.setDisable(true);
+        //this.btn_set_emotion.setDisable(true);
         this.btn_create_event.setDisable(true);
         this.btn_process_signal.setDisable(true);
-        this.combobox_emotions.setDisable(true);
+        //this.combobox_emotions.setDisable(true);
         //this.btn_segment_report.setDisable(true);
         this.slide_chart.setDisable(true);
 
+        //Desactivando botones por emoción
+        for (String nameEmotions: listNamesEmotions) {
+            DisableEmotionButton(nameEmotions, true);
+        }
+
+        this.btnEdicionFlag = false;
+        this.btnFiltroFlag = false;
+
+        this.btnEdicion.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY){
+                if(btnEdicionFlag == false){
+                    this.btnEdicionFlag = true;
+                    this.btnFiltroFlag = false;
+                    this.btnEdicion.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                    this.btnFiltro.setStyle("-fx-background-color: transparent");
+                    for (String nameEmotions: listNamesEmotions) {
+                        DisableEmotionButton(nameEmotions, false);
+                    }
+                }
+                else{
+                    this.btnEdicionFlag = false;
+                    this.btnEdicion.setStyle("-fx-background-color: transparent");
+                    for (String nameEmotions: listNamesEmotions) {
+                        DisableEmotionButton(nameEmotions, true);
+                    }
+
+                }
+            }
+        });
+
+        this.btnFiltro.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY){
+                if(btnFiltroFlag == false){
+                    this.btnFiltroFlag = true;
+                    this.btnEdicionFlag = false;
+                    this.btnFiltro.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                    this.btnEdicion.setStyle("-fx-background-color: transparent");
+                    for (String nameEmotions: listNamesEmotions) {
+                        DisableEmotionButton(nameEmotions, false);
+                    }
+                }
+                else{
+                    this.btnFiltroFlag = false;
+                    this.btnFiltro.setStyle("-fx-background-color: transparent");
+                    for (String nameEmotions: listNamesEmotions) {
+                        DisableEmotionButton(nameEmotions, true);
+                    }
+
+                }
+            }
+        });
+        this.btnEmotionEnojoFlag = false;
+        this.btnEmotionFelicidadFlag = false;
+        this.btnEmotionTristezaFlag = false;
+        this.btnEmotionMiedoFlag = false;
+        this.btnEmotionSorpresaFlag = false;
+        EventButtonsEmotions();
+        this.table_detail = new TableView<>();
         //Agregando listener para cada fila de la tabla de detalles
+        /*
         this.table_detail.getSelectionModel().selectedItemProperty().addListener(new ChangeListener() {
             @Override
             public void changed(ObservableValue observableValue, Object oldValue, Object newValue) {
@@ -292,7 +405,7 @@ public class ANSController extends CanalModel {
                 }
             }
         });
-
+        */
         //Timer del render para ver chart como vídeo
         this.timer = new Timer();
     }
@@ -322,15 +435,17 @@ public class ANSController extends CanalModel {
         System.out.println(millis);
         slide_chart.setValue(millis/1000);
         //Se activan botones
-        this.btn_set_emotion.setDisable(false);
+        //this.btn_set_emotion.setDisable(false);
         this.btn_create_event.setDisable(false);
-        this.combobox_emotions.setDisable(false);
+        //this.combobox_emotions.setDisable(false);
 
         this.millis = format_number(millis);
         signalController.get_particular_data(format_number(millis));
+
         alert_task = signalController.getCardiac_coherence_description();
         segment_time = signalController.getN_segment();
         emotion_task = signalController.getEmotion();
+
         cardiac_coherence_task = signalController.getRatio_coherence().toString();
         initial_time_task = signalController.getPartial_start_time().toString();
         final_time_task = signalController.getPartial_end_time().toString();
@@ -348,6 +463,224 @@ public class ANSController extends CanalModel {
         //System.out.println(millis);
     }
 
+
+
+
+
+    public void DisableEmotionButton(String emotionName, boolean disable){
+
+        if(emotionName.equals("Sorpresa")){
+            this.btnSorpresa.setDisable(disable);
+        } else if (emotionName.equals("Enojo")) {
+            this.btnEnojo.setDisable(disable);
+        } else if (emotionName.equals("Felicidad")) {
+            this.btnFelicidad.setDisable(disable);
+        } else if (emotionName.equals("Tristeza")) {
+            this.btnTristeza.setDisable(disable);
+        } else if (emotionName.equals("Miedo")) {
+            this.btnMiedo.setDisable(disable);
+        }
+
+    }
+
+    public void EventButtonsEmotions(){
+        this.btnSorpresa.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                if(this.btnEdicionFlag == true){
+                    if(btnEmotionSorpresaFlag == false){
+                        this.btnMiedo.setStyle("-fx-background-color: transparent");
+                        this.btnTristeza.setStyle("-fx-background-color: transparent");
+                        this.btnEnojo.setStyle("-fx-background-color: transparent");
+                        this.btnFelicidad.setStyle("-fx-background-color: transparent");
+                        this.btnSorpresa.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnEmotionMiedoFlag = false;
+                        this.btnEmotionTristezaFlag = false;
+                        this.btnEmotionEnojoFlag = false;
+                        this.btnEmotionFelicidadFlag = false;
+                        this.btnEmotionSorpresaFlag = true;
+                        this.emotionNameFlag = "Sorpresa";
+                    }
+                    else{
+                        this.btnSorpresa.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionSorpresaFlag = false;
+                    }
+                } else if (this.btnFiltroFlag == true && this.btnEmotionSorpresaFlag == false) {
+                    this.btnSorpresa.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                    setColorTimelineEmotions("Sorpresa","FFD966");
+                    this.btnEmotionSorpresaFlag = true;
+                } else if (this.btnFiltroFlag == true && this.btnEmotionSorpresaFlag == true){
+                    this.btnSorpresa.setStyle("-fx-background-color: transparent");
+                    setColorTimelineEmotions("Sorpresa","9dc6d4");
+                    this.btnEmotionSorpresaFlag = false;
+                }
+            }
+        });
+        this.btnMiedo.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            
+            if (event.getButton() == MouseButton.PRIMARY) {
+                if(this.btnEdicionFlag == true){
+                    if(btnEmotionMiedoFlag == false){
+                        this.btnSorpresa.setStyle("-fx-background-color: transparent");
+                        this.btnTristeza.setStyle("-fx-background-color: transparent");
+                        this.btnEnojo.setStyle("-fx-background-color: transparent");
+                        this.btnFelicidad.setStyle("-fx-background-color: transparent");
+                        this.btnMiedo.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnEmotionSorpresaFlag = false;
+                        this.btnEmotionTristezaFlag = false;
+                        this.btnEmotionEnojoFlag = false;
+                        this.btnEmotionFelicidadFlag = false;
+                        this.btnEmotionMiedoFlag = true;
+                        this.emotionNameFlag = "Miedo";
+                    }
+                    else{
+                        this.btnMiedo.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionMiedoFlag = false;
+                    }
+                } else if (this.btnFiltroFlag == true && this.btnEmotionMiedoFlag == false) {
+                    this.btnMiedo.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                    setColorTimelineEmotions("Miedo","073763");
+                    this.btnEmotionMiedoFlag = true;
+                } else if (this.btnFiltroFlag == true && this.btnEmotionMiedoFlag == true){
+                    this.btnMiedo.setStyle("-fx-background-color: transparent");
+                    setColorTimelineEmotions("Miedo","9dc6d4");
+                    this.btnEmotionMiedoFlag = false;
+                }
+            }
+        });
+        this.btnTristeza.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                if(this.btnEdicionFlag == true){
+                    if(btnEmotionTristezaFlag == false){
+                        this.btnSorpresa.setStyle("-fx-background-color: transparent");
+                        this.btnTristeza.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnEnojo.setStyle("-fx-background-color: transparent");
+                        this.btnFelicidad.setStyle("-fx-background-color: transparent");
+                        this.btnMiedo.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionSorpresaFlag = false;
+                        this.btnEmotionTristezaFlag = true;
+                        this.btnEmotionEnojoFlag = false;
+                        this.btnEmotionFelicidadFlag = false;
+                        this.btnEmotionMiedoFlag = false;
+                        this.emotionNameFlag = "Tristeza";
+                    }
+                    else{
+                        this.btnTristeza.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionTristezaFlag = false;
+                    }
+                } else if (this.btnFiltroFlag == true && this.btnEmotionTristezaFlag == false) {
+                    this.btnTristeza.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                    setColorTimelineEmotions("Tristeza","D9D2E9");
+                    this.btnEmotionTristezaFlag = true;
+                } else if (this.btnFiltroFlag == true && this.btnEmotionTristezaFlag == true){
+                    this.btnTristeza.setStyle("-fx-background-color: transparent");
+                    setColorTimelineEmotions("Tristeza","9dc6d4");
+                    this.btnEmotionTristezaFlag = false;
+                }
+            }
+        });
+        this.btnFelicidad.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                if(this.btnEdicionFlag == true){
+                    if(btnEmotionFelicidadFlag == false){
+                        this.btnSorpresa.setStyle("-fx-background-color: transparent");
+                        this.btnTristeza.setStyle("-fx-background-color: transparent");
+                        this.btnEnojo.setStyle("-fx-background-color: transparent");
+                        this.btnFelicidad.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnMiedo.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionSorpresaFlag = false;
+                        this.btnEmotionTristezaFlag = false;
+                        this.btnEmotionEnojoFlag = false;
+                        this.btnEmotionFelicidadFlag = true;
+                        this.btnEmotionMiedoFlag = false;
+                        this.emotionNameFlag = "Felicidad";
+                    }
+                    else{
+                        this.btnFelicidad.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionFelicidadFlag = false;
+                    }
+                } else if (this.btnFiltroFlag == true && this.btnEmotionFelicidadFlag == false) {
+                    this.btnFelicidad.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                    setColorTimelineEmotions("Felicidad","674EA7");
+                    this.btnEmotionFelicidadFlag = true;
+                } else if (this.btnFiltroFlag == true && this.btnEmotionFelicidadFlag == true){
+                    this.btnTristeza.setStyle("-fx-background-color: transparent");
+                    setColorTimelineEmotions("Felicidad","9dc6d4");
+                    this.btnEmotionFelicidadFlag = false;
+                }
+            }
+        });
+        this.btnEnojo.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                if(this.btnEdicionFlag == true){
+                    if(btnEmotionEnojoFlag == false){
+                        this.btnSorpresa.setStyle("-fx-background-color: transparent");
+                        this.btnTristeza.setStyle("-fx-background-color: transparent");
+                        this.btnEnojo.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnFelicidad.setStyle("-fx-background-color: transparent");
+                        this.btnMiedo.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionSorpresaFlag = false;
+                        this.btnEmotionTristezaFlag = false;
+                        this.btnEmotionEnojoFlag = true;
+                        this.btnEmotionFelicidadFlag = false;
+                        this.btnEmotionMiedoFlag = false;
+                        this.emotionNameFlag = "Enojo";
+                    }
+                    else{
+                        this.btnEnojo.setStyle("-fx-background-color: transparent");
+                        this.btnEmotionEnojoFlag = false;
+                    }
+                } else if (this.btnFiltroFlag == true && this.btnEmotionEnojoFlag == false) {
+                    this.btnEnojo.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                    setColorTimelineEmotions("Enojo","c23a3a");
+                    this.btnEmotionEnojoFlag = true;
+                } else if (this.btnFiltroFlag == true && this.btnEmotionEnojoFlag == true){
+                    this.btnEnojo.setStyle("-fx-background-color: transparent");
+                    setColorTimelineEmotions("Enojo","9dc6d4");
+                    this.btnEmotionEnojoFlag = false;
+                }
+            }
+        });
+
+    }
+
+    public String colorEmotion(String emotion){
+        if(emotion.equals("Sorpresa"))
+            return "FFD966";
+        if(emotion.equals("Miedo"))
+            return "073763";
+        if(emotion.equals("Felicidad"))
+            return "674EA7";
+        if(emotion.equals("Enojo"))
+            return "c23a3a";
+        if(emotion.equals("Tristeza"))
+            return "D9D2E9";
+        return "";
+    }
+
+    public void setColorTimelineEmotions(String emotionName, String color){
+
+        for(int i = 0; i < timelineElementEmotion.getChildren().size(); i++){
+            for(int j = 0; j < this.getTags().size(); j++){
+                signalController.get_particular_data(format_number(this.getTags().get(j).getInitTimeInMS()));
+                if(timelineElementEmotion.getChildren().get(i) == this.getTags().get(j) && emotionName.equals(signalController.getEmotion())){
+                    TimelineTag timelineTagEmotion = new TimelineTag(this.timelineElementEmotion.getWidth() *  this.getTags().get(j).getInitTimeInMS() / (signalController.getSignal().getEnd_time_signal() * 1000),
+                            this.timelineElementEmotion.getWidth() *  this.getTags().get(j).getLengthInMS() / (signalController.getSignal().getEnd_time_signal() * 1000),
+                            this.getTags().get(j).getCode(),
+                            this.getTags().get(j).getDescription(),
+                            this.getTags().get(j).getInitTimeInMS(),
+                            this.getTags().get(j).getLengthInMS(),
+                            Color.valueOf(color),
+                            this.getName(),
+                            this.getTags().get(j).getSource(), "2");
+
+                    timelineElementEmotion.getChildren().set(i, timelineTagEmotion);
+                    this.getTags().set(j, timelineTagEmotion);
+                    System.out.println(i);
+                    break;
+                }
+            }
+        }
+    }
     /*
     1.3. Métodos lectura de archivos
      */
@@ -367,18 +700,23 @@ public class ANSController extends CanalModel {
 
         //Activando botón
         this.btn_process_signal.setDisable(false);
-
         this.path_signal = path;
+        this.path_signal_emotion = path + "_" + "emotion";
+
+
         this.source_name = Paths.get(path).getFileName().toString();
 
         //Párametros de la línea de tiempo
         Double sourceLength = get_length_signal_file(path);
         timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
+        timelineElementEmotion = new TimelineElement(path + "_" + "emotion",sourceLength,"Psicofisiológico", Color.valueOf("9dc6d4"));
         this.root.fireEvent(
                 new AddSourceEvent(this.getProjectDir() + "\\" + this.source_name, this.getName())
         );
-
-        return this.timelineElement;
+        this.root.fireEvent(
+                new AddSourceEvent(this.getProjectDir() + "\\" + this.source_name + "_emotion", this.getName())
+        );
+        return timelineElement;
     }
 
     public ImageView create_image_btn_render(String path_image){
@@ -435,7 +773,12 @@ public class ANSController extends CanalModel {
         Double start_time = signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionX() / timelineElement.getWidth();
         Double end_time = start_time + signalController.getSignal().getEnd_time_signal() * 1000 * timelineElement.getSelectionWidth() / timelineElement.getWidth();
 
-        this.path_signal = path;
+        if(path.contains("_emotion"))
+            this.path_signal_emotion = path + "_" + "emotion";
+        else{
+            this.path_signal = path;
+        }
+
         this.source_name = Paths.get(path).getFileName().toString();
 
         Platform.runLater(() -> {
@@ -570,9 +913,9 @@ public class ANSController extends CanalModel {
         this.emotion_abstract.setText("Emoción general: " + signalController.getSignal().getPredominant_emotion().toString());
         try {
             InputStream url = ANSController.class.getResourceAsStream(signalController.getSignal().getEmotion_image_path());
-            this.image_emotion.setImage(new Image(url));
-            this.image_emotion.setFitHeight(181);
-            this.image_emotion.setFitWidth(150);
+            //this.image_emotion.setImage(new Image(url));
+            //this.image_emotion.setFitHeight(181);
+            //this.image_emotion.setFitWidth(150);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -581,11 +924,11 @@ public class ANSController extends CanalModel {
         //this.alert.setText("N° Alertas: " + signalController.getSignal().getCount_alerts().toString());
         this.alert.setText("N° Alertas: " +   signalController.calculateNumberAlertas());
 
-        this.cant_segmento_panel.setText("Cantidad de Particiones: " + signalController.getSignal().getTime_line().size());
+        //this.cant_segmento_panel.setText("Cantidad de Particiones: " + signalController.getSignal().getTime_line().size());
         Float initial_seg = format_number(signalController.getSignal().getStart_time_signal());
         Float final_seg = format_number(signalController.getSignal().getEnd_time_signal());
-        segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
-        cardiac_coherence.setText("Nombre de archivo: " + Paths.get(path).getFileName().toString());
+        //segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
+        //cardiac_coherence.setText("Nombre de archivo: " + Paths.get(path).getFileName().toString());
 
         //*********************** Vídeo ***********************
         //this.path_video = "C:\\Users\\Franco\\Desktop\\Escritorio\\Universidad\\Memoria\\ANS-plugin\\audio.wav";
@@ -599,7 +942,7 @@ public class ANSController extends CanalModel {
         //Modificando atributos de gráfico
         this.chart.setTitle("Frecuencia Cardíaca Instantánea en el Tiempo");
         this.chart.getXAxis().setLabel("Tiempo (s)");
-        this.chart.getYAxis().setLabel("Frecuencia Cardíaca (Hz)");
+        this.chart.getYAxis().setLabel("FCI (Hz)");
         this.chart.setCreateSymbols(false);
 
         //Inicializando gráfico
@@ -618,8 +961,8 @@ public class ANSController extends CanalModel {
 
         //*********************** Tabla de detalles ***********************
         create_table_detail(true);
-        //reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
-       // reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 1);
+        reportController.create_report_excel(this.table_detail, this.signalController.getSignal().getFci(), this.signalController.getSignal().getTimes_fci(), this.signalController.getSignal(), this.getProjectDir(), this.source_name);
+        reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 1);
 
         //Render
         this.slide_chart.setDisable(false);
@@ -639,7 +982,15 @@ public class ANSController extends CanalModel {
     public TimelineElement loadProjectSource(String path) {
 
         signalController = new SignalController();
-        this.source_name = Paths.get(path).getFileName().toString();
+        TimelineElement globalTimeline = null;
+        if(path.equals(path + "_" + "emotion")){
+            this.path_signal_emotion = path + "_" + "emotion";
+        }
+        else {
+            this.path_signal = path;
+        }
+        this.source_name = Paths.get(path_signal).getFileName().toString();
+        this.name_project.setText(this.source_name);
         //String complete_path = path + ".xls";
         String complete_path_segment_time_line = getProjectDir() + "/" + "senalAnalisis.xls";
         String complete_path_partitions_time_line = getProjectDir() + "/" + "senalParticiones.xls";
@@ -667,39 +1018,102 @@ public class ANSController extends CanalModel {
                 //Párametros de la línea de tiempo
 
             }
+
             Double sourceLength = signalController.get_sourceLength();
+
+            if(path.contains("_emotion")){
+                timelineElementEmotion = new TimelineElement(path +"_"+"emotion",sourceLength,"Psicofisiológico", Color.valueOf("9dc6d4"));
+
+                System.out.println("timelineElementEmotion: " + timelineElementEmotion.getPathToSource());
+                return timelineElementEmotion;
+            }
+
             timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
+            System.out.println("timelineElement: " + timelineElement.getPathToSource());
+
         }
-        return this.timelineElement;
+        return timelineElement;
     }
 
-    public void loadProjectTag(String source, String code, String desc, double initTimeInMS, double lengthInMS) {
-        Color color;
-        signalController.get_particular_data_charge_line_time(initTimeInMS);
-        if (signalController.getRatio_coherence() <= 0.5) color = Color.rgb(105,105,105);
-         else color = Color.rgb(169,169,169);
 
 
-        TimelineTag timelineTag = new TimelineTag(this.timelineElement.getWidth() * initTimeInMS / (signalController.getSignal().getEnd_time_signal()*1000),
-                this.timelineElement.getWidth() * lengthInMS / (signalController.getSignal().getEnd_time_signal()*1000),
-                code,
-                desc,
-                initTimeInMS,
-                lengthInMS,
-                color,
-                this.getName(),
-                source);
-        this.timelineElement.getChildren().add(timelineTag);
-        this.getTags().add(timelineTag);
-        this.tagsSelected.add(timelineTag.selectedProperty());
-        this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
-                (observable, oldValue, newValue) -> {
-                   // processingBtn.setDisable(newValue);
-                    //exportDetailsBtn.setDisable(true);
-                    //checkTagBtn.setDisable(!newValue);
-                    //addTagBtn.setDisable(newValue);
+    public void loadProjectTag(String source, String code, String desc, double initTimeInMS, double lengthInMS, String custom) {
+        if(custom.equals("1")) {
+            System.out.println("Source coherencia: " + source);
+            System.out.println("Path signal: " + path_signal);
+            Color color;
+            signalController.get_particular_data_charge_line_time(initTimeInMS);
+            if (signalController.getRatio_coherence() <= 0.5) color = Color.rgb(105, 105, 105);
+            else color = Color.rgb(169, 169, 169);
+
+            TimelineTag timelineTag = new TimelineTag(this.timelineElement.getWidth() * initTimeInMS / (signalController.getSignal().getEnd_time_signal() * 1000),
+                    this.timelineElement.getWidth() * lengthInMS / (signalController.getSignal().getEnd_time_signal() * 1000),
+                    code,
+                    desc,
+                    initTimeInMS,
+                    lengthInMS,
+                    color,
+                    this.getName(),
+                    source, "1");
+            this.timelineElement.getChildren().add(timelineTag);
+            this.getTags().add(timelineTag);
+            this.tagsSelected.add(timelineTag.selectedProperty());
+            this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
+                    (observable, oldValue, newValue) -> {
+                        seek(initTimeInMS);
+                        System.out.println("Tag: " + initTimeInMS);
+                        // processingBtn.setDisable(newValue);
+                        //exportDetailsBtn.setDisable(true);
+                        //checkTagBtn.setDisable(!newValue);
+                        //addTagBtn.setDisable(newValue);
+                    }
+            );
+        }
+        else if(custom.equals("2")){
+            System.out.println("Source emoción: " + source);
+            System.out.println("Path signal: " + path_signal);
+            Color coloraux;
+            signalController.get_particular_data_charge_line_time(initTimeInMS);
+            coloraux = Color.valueOf( colorEmotion(signalController.getEmotion()));
+            System.out.println(signalController.getEmotion());
+            System.out.println("Ratio Coherence: ");
+            System.out.println(signalController.getRatio_coherence());
+
+            TimelineTag timelineTagEmotion = new TimelineTag(this.timelineElementEmotion.getWidth() * initTimeInMS / (signalController.getSignal().getEnd_time_signal()*1000),
+                    this.timelineElementEmotion.getWidth() * lengthInMS / (signalController.getSignal().getEnd_time_signal()*1000),
+                    code,
+                    desc,
+                    initTimeInMS,
+                    lengthInMS,
+                    coloraux,
+                    this.getName(),
+                    source, "2");
+            timelineTagEmotion.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+                if (event.getButton() == MouseButton.PRIMARY){
+                    seek(initTimeInMS);
+                    if(btnFiltroFlag == false && btnEdicionFlag == false)
+                        DisableEmotionButton(emotion_task, false);
+                    else if (btnEdicionFlag == true) {
+                        String color = colorEmotion(emotionNameFlag);
+                        timelineTagEmotion.setFill(Color.valueOf(color));
+                        setEmotionSegment(format_number(initTimeInMS), emotionNameFlag );
+
+                    }
                 }
-        );
+
+            });
+            this.timelineElementEmotion.getChildren().add(timelineTagEmotion);
+
+            this.getTags().add(timelineTagEmotion);
+            this.tagsSelected.add(timelineTagEmotion.selectedProperty());
+            this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
+                    (observable, oldValue, newValue) -> {
+
+                    }
+            );
+
+        }
+
     }
 
 
@@ -984,13 +1398,19 @@ public class ANSController extends CanalModel {
     @FXML
     void create_table_detail(boolean first_instance){
         if(first_instance) {
-            this.segment_detail.setCellValueFactory(new PropertyValueFactory<>("id"));
-            this.initial_time_detail.setCellValueFactory(new PropertyValueFactory<>("initial_time"));
-            this.final_time_detail.setCellValueFactory(new PropertyValueFactory<>("final_time"));
-            this.emotion_detail.setCellValueFactory(new PropertyValueFactory<>("emotion"));
-            this.cardiac_detail.setCellValueFactory(new PropertyValueFactory<>("cardiac_coherence"));
-            this.alert_detail.setCellValueFactory(new PropertyValueFactory<>("alert"));
+            //this.alert_detail.setCellValueFactory(new PropertyValueFactory<>("alert"));
+            //this.cardiac_detail.setCellValueFactory(new PropertyValueFactory<>("cardiac_coherence"));
+            //this.emotion_detail.setCellValueFactory(new PropertyValueFactory<>("emotion"));
+            //this.final_time_detail.setCellValueFactory(new PropertyValueFactory<>("final_time"));
+            //this.initial_time_detail.setCellValueFactory(new PropertyValueFactory<>("initial_time"));
+            //this.segment_detail.setCellValueFactory(new PropertyValueFactory<>("id"));
 
+            TableColumn segment_detail = new TableColumn("Segmento");
+            TableColumn initial_time_detail = new TableColumn("Tiempo Inicial (s)");
+            TableColumn final_time_detail = new TableColumn("Tiempo Final (s)");
+            TableColumn emotion_detail = new TableColumn("Emoción");
+            TableColumn cardiac_detail = new TableColumn("Coherencia Cardíaca");
+            TableColumn alert_detail = new TableColumn("Alerta");
             TableColumn ratio_coherence = new TableColumn("Valor Coherencia");
             TableColumn vlf = new TableColumn("Muy Baja Frecuencia (VLF)");
             TableColumn lf = new TableColumn("Baja Frecuencia (LF)");
@@ -1005,6 +1425,12 @@ public class ANSController extends CanalModel {
             TableColumn sdsd = new TableColumn("sdsd");
             //TableColumn pnn50 = new TableColumn("pnn50");
 
+            segment_detail.setCellValueFactory(new PropertyValueFactory<>("id"));
+            initial_time_detail.setCellValueFactory(new PropertyValueFactory<>("initial_time"));
+            final_time_detail.setCellValueFactory(new PropertyValueFactory<>("final_time"));
+            emotion_detail.setCellValueFactory(new PropertyValueFactory<>("emotion"));
+            cardiac_detail.setCellValueFactory(new PropertyValueFactory<>("cardiac_coherence"));
+            alert_detail.setCellValueFactory(new PropertyValueFactory<>("alert"));
             ratio_coherence.setCellValueFactory(new PropertyValueFactory<>("ratio_coherence"));
             vlf.setCellValueFactory(new PropertyValueFactory<>("vlf"));
             lf.setCellValueFactory(new PropertyValueFactory<>("lf"));
@@ -1019,7 +1445,7 @@ public class ANSController extends CanalModel {
             sdsd.setCellValueFactory(new PropertyValueFactory<>("sdsd"));
             //ddpnn50.setCellValueFactory(new PropertyValueFactory<>("pnn50"));
 
-            this.table_detail.getColumns().addAll(ratio_coherence, vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd);
+            this.table_detail.getColumns().addAll(segment_detail,initial_time_detail,final_time_detail,emotion_detail,cardiac_detail,alert_detail,ratio_coherence, vlf,lf, hf, lf_hf, fft_total, hr_mean,hr_min, hr_max, sdnn, rmssd, sdsd);
         }
 
         this.table_detail.getItems().clear();
@@ -1027,7 +1453,7 @@ public class ANSController extends CanalModel {
         ObservableList<SegmentSignal> list = FXCollections.observableArrayList();
         // Creando nuevo segmento de la señal
 
-        
+
         Integer contador = 1;
         for (Integer i = 0; i < signalController.getSignal().getTime_line().size(); i ++){
             SegmentSignal segmentSignal = new SegmentSignal();
@@ -1077,25 +1503,25 @@ public class ANSController extends CanalModel {
 
     public void set_data_abstact(double millis){
         alert.setText("Descripción: " + alert_task );
-        cant_segmento_panel.setText("N° Segmento: " + segment_time);
-        cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
+        //cant_segmento_panel.setText("N° Segmento: " + segment_time);
+        //cardiac_coherence.setText("Valor cardíaco: " + cardiac_coherence_task);
         Float initial_seg =  format_number(Double.parseDouble(initial_time_task))/1000;
         Float final_seg = format_number(Double.parseDouble(final_time_task))/1000;
-        segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
-        image_emotion.setImage(new Image(path_image_emotion));
+        //segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
+        //image_emotion.setImage(new Image(path_image_emotion));
         this.emotion_abstract.setText(this.emotion_task);
-        this.image_emotion.setFitHeight(181);
-        this.image_emotion.setFitWidth(150);
+
 
     }
 
     //Modifica colores y tag de la línea de tiempo
     private void addEventTag(){
-        for(Integer i = 1; i < signalController.getSignal().getTime_line().size(); i++) {
+        int contador = 1;
+        for(Integer i = 0; i < signalController.getSignal().getTime_line().size(); i++) {
+            double partial_initial_time = signalController.getSignal().getTime_line().get(i).getKey().getStart_time();
+            double partial_final_time = signalController.getSignal().getTime_line().get(i).getKey().getEnd_time();
+            double partial_ratio_coherence = signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence();
             if (signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence() < 1) {
-                double partial_initial_time = signalController.getSignal().getTime_line().get(i).getKey().getStart_time();
-                double partial_final_time = signalController.getSignal().getTime_line().get(i).getKey().getEnd_time();
-                double partial_ratio_coherence = signalController.getSignal().getTime_line().get(i).getKey().getRatio_coherence();
                 Color color;
                 if (partial_ratio_coherence <= 0.5 && i != 0)
                     color = Color.rgb(105,105,105);
@@ -1107,18 +1533,64 @@ public class ANSController extends CanalModel {
                 TimelineTag timelineTag = new TimelineTag(
                         this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
                         this.timelineElement.getRectangle().getWidth() * partial_final_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000) - this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
-                        "Alerta " + i.toString(),
+                        "Alerta " + contador,
                         "Coherencia Cardíaca de " + partial_ratio_coherence,
                         partial_initial_time * 1000,
                         partial_final_time * 1000 - partial_initial_time * 1000,
                         color,
                         this.getName(),
-                        Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString());
+                        Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString(), "1");
                 this.timelineElement.getChildren().add(timelineTag);
                 this.getTags().add(timelineTag);
                 root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTag.getCode(),
-                        timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS()));
+                        timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS(), "1"));
+                this.tagsSelected.add(timelineTag.selectedProperty());
+                this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
+                        (observable, oldValue, newValue) -> {
+                            seek(timelineTag.getInitTimeInMS());
+                        });
+                contador++;
+
             }
+
+            Color colorEmotion =  Color.rgb(169,169,169);
+            if(signalController.getSignal().getTime_line().get(i).getKey().getEmotion().equals("Sorpresa")){
+                colorEmotion = Color.rgb(105,105,105);
+            }
+            TimelineTag timelineTagEmotion = new TimelineTag(
+                    this.timelineElementEmotion.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
+                    this.timelineElementEmotion.getRectangle().getWidth() * partial_final_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000) - this.timelineElement.getRectangle().getWidth() * partial_initial_time * 1000 / (this.signalController.getSignal().getEnd_time_signal() * 1000),
+                    "Alerta " + contador,
+                    "Emocion " + signalController.getSignal().getTime_line().get(i).getKey().getEmotion().getName(),
+                    partial_initial_time * 1000,
+                    partial_final_time * 1000 - partial_initial_time * 1000,
+                    colorEmotion,
+                    this.getName(),
+                    Paths.get(this.getProjectDir() + "/" + this.source_name + "_emotion").toAbsolutePath().toString(), "2");
+            timelineTagEmotion.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+                if (event.getButton() == MouseButton.PRIMARY){
+                    seek(timelineTagEmotion.getInitTimeInMS());
+                    if(btnFiltroFlag == false && btnEdicionFlag == false)
+                        DisableEmotionButton(emotion_task, false);
+                    else if (btnEdicionFlag == true) {
+                        String color = colorEmotion(emotionNameFlag);
+                        timelineTagEmotion.setFill(Color.valueOf(color));
+                        setEmotionSegment(format_number(timelineTagEmotion.getInitTimeInMS()), emotionNameFlag );
+
+                    }
+                }
+
+            });
+            this.timelineElementEmotion.getChildren().add(timelineTagEmotion);
+            this.getTags().add(timelineTagEmotion);
+            root.fireEvent(new AddTagEvent(getName(), this.path_signal_emotion, timelineTagEmotion.getCode(),
+                    timelineTagEmotion.getDescription(), timelineTagEmotion.getInitTimeInMS(), timelineTagEmotion.getLengthInMS(), "2"));
+            this.tagsSelected.add(timelineTagEmotion.selectedProperty());
+            this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
+                    (observable, oldValue, newValue) -> {
+                        seek(timelineTagEmotion.getInitTimeInMS());
+                    });
+            contador++;
         }
     }
 
@@ -1161,9 +1633,9 @@ public class ANSController extends CanalModel {
 
         //Mientras se ejecuta la tarea
         task.setOnRunning(wse -> {
-           dialog_charge();
-           vBoxCharge.getChildren().add(new Label("Procesando señal"));
-           dialogContent.setContent(vBoxCharge);
+            dialog_charge();
+            vBoxCharge.getChildren().add(new Label("Procesando señal"));
+            dialogContent.setContent(vBoxCharge);
             if(signalController.getSignal()!= null) {
                 vBoxCharge.getChildren().add(new Label("Respaldando Procesamiento"));
                 dialogContent.setContent(vBoxCharge);
@@ -1198,7 +1670,7 @@ public class ANSController extends CanalModel {
 
     @FXML
     void handleButtonEvent(ActionEvent e){
-        this.btn_set_emotion.setDisable(true);
+        //this.btn_set_emotion.setDisable(true);
         Dialog<Project> dialogProject = new Dialog<>();
         dialogProject.setTitle("Alerta manual");
         dialogProject.setHeaderText("Por favor, ingrese los siguientes datos para crear una alerta manual");
@@ -1230,28 +1702,41 @@ public class ANSController extends CanalModel {
             if (button == ButtonType.OK && (code.getText().length() != 0 || desc.getText().length() != 0 || this.combobox_emotions.getValue() != "")) {
 
 
-                TimelineTag timelineTag = new TimelineTag(this.timelineElement.getSelectionX(),
-                        this.timelineElement.getSelectionWidth(),
+                TimelineTag timelineTagEmotion = new TimelineTag(this.timelineElementEmotion.getSelectionX(),
+                        this.timelineElementEmotion.getSelectionWidth(),
                         code.getText(),
                         desc.getText(),
-                        this.timelineElement.getSourceLength() * 1000 * this.timelineElement.getSelectionX() / this.timelineElement.getWidth(),
-                        this.timelineElement.getSourceLength() * 1000 * this.timelineElement.getSelectionWidth() / this.timelineElement.getWidth(),
+                        this.timelineElementEmotion.getSourceLength() * 1000 * this.timelineElementEmotion.getSelectionX() / this.timelineElementEmotion.getWidth(),
+                        this.timelineElementEmotion.getSourceLength() * 1000 * this.timelineElementEmotion.getSelectionWidth() / this.timelineElementEmotion.getWidth(),
                         Color.LIGHTBLUE,
-                        this.getName(),
-                        Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString());
-                this.timelineElement.getChildren().add(timelineTag);
-                this.getTags().add(timelineTag);
-                root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTag.getCode(),
-                        timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS()));
-                System.out.println( this.timelineElement.getSourceLength());
+                        this.getName(),this.path_signal_emotion, "2");
+                timelineTagEmotion.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
+                    if (event.getButton() == MouseButton.PRIMARY){
+                        seek(timelineTagEmotion.getInitTimeInMS());
+                        if(btnFiltroFlag == false && btnEdicionFlag == false)
+                            DisableEmotionButton(emotion_task, false);
+                        else if (btnEdicionFlag == true) {
+                            String color = colorEmotion(emotionNameFlag);
+                            timelineTagEmotion.setFill(Color.valueOf(color));
+                            setEmotionSegment(format_number(timelineTagEmotion.getInitTimeInMS()), emotionNameFlag );
+
+                        }
+                    }
+
+                });
+                this.timelineElementEmotion.getChildren().add(timelineTagEmotion);
+                this.getTags().add(timelineTagEmotion);
+                root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTagEmotion.getCode(),
+                        timelineTagEmotion.getDescription(), timelineTagEmotion.getInitTimeInMS(), timelineTagEmotion.getLengthInMS(), "2"));
+                System.out.println( this.timelineElementEmotion.getSourceLength());
                 System.out.println(signalController.getSignal().getEnd_time_signal());
 
                 // Seteando valores de alerta
-                this.signalController.set_manual_alert_aux(timelineTag.getInitTimeInMS()/1000, (timelineTag.getInitTimeInMS()+ timelineTag.getLengthInMS())/1000, this.combobox_emotions.getValue() );
+                this.signalController.set_manual_alert_aux(timelineTagEmotion.getInitTimeInMS()/1000, (timelineTagEmotion.getInitTimeInMS()+ timelineTagEmotion.getLengthInMS())/1000, this.combobox_emotions.getValue() );
                 //Modificando tabla con nueva alerta en segmento específico
                 create_table_detail(false);
                 reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 0);
-                this.btn_set_emotion.setDisable(false);
+                //this.btn_set_emotion.setDisable(false);
                 dialogProject.close();
             } else if (button == ButtonType.CANCEL) {
                 dialogProject.close();
@@ -1311,6 +1796,26 @@ public class ANSController extends CanalModel {
         this.btn_set_emotion.setDisable(true);
     }
 
+    public void setEmotionSegment(Float millis, String nameEmotion){
+        //Obteniendo valores específicos del segmento seleccionado de la señal con la nueva emoción
+        signalController.set_particular_emotion(millis, nameEmotion);
+
+        //String color = colorEmotion(nameEmotion);
+        //setColorTimelineByTime(millis, color);
+        //setColorTimelineEmotions(nameEmotion,color);
+
+        //Modificando tabla con nueva emoción en segmento específico
+        create_table_detail(false);
+        reportController.create_time_line_excel(signalController.getSignal().getTime_line(), getProjectDir(), 0);
+
+        //Modificando Labels
+        emotion_task = signalController.getEmotion();
+        this.emotion_abstract.setText(this.emotion_task);
+
+        //Desactivando botón para la emoción seleccionada en el segmento en específico
+        //this.btn_set_emotion.setDisable(true);
+    }
+
     @FXML
     void handleButtonExportSegment(ActionEvent event){
 
@@ -1336,7 +1841,7 @@ public class ANSController extends CanalModel {
 
     @FXML
     void pushReturnSignal(ActionEvent event) {
-    //Detiene el avance en play de la señal
+        //Detiene el avance en play de la señal
         if(is_play){
             is_play = false;
             timer.cancel();
@@ -1393,7 +1898,7 @@ public class ANSController extends CanalModel {
         if(render_millis_chart < window){
             low = 0.0;
             upper = render_millis_chart + window;
-       } else if (render_millis_chart >= window && render_millis_chart < signalController.getSignal().getEnd_time_signal()) {
+        } else if (render_millis_chart >= window && render_millis_chart < signalController.getSignal().getEnd_time_signal()) {
             low = render_millis_chart - window;
             upper = render_millis_chart + window;
         }
@@ -1422,9 +1927,6 @@ public class ANSController extends CanalModel {
         });
     }
 
-
-
-
     // Entrega un número con formato .0000
     public Float format_number(Double number){
         DecimalFormat numeroFormateado = new DecimalFormat("#.00000");
@@ -1435,5 +1937,15 @@ public class ANSController extends CanalModel {
     }
 
 
+    private Stage primaryStage;
 
+    //Mostrando tabla de detalles
+    @FXML
+    void showDetailsTable(ActionEvent event) throws IOException {
+        TableDetail tableDetail = new TableDetail(this.table_detail);
+        tableDetail.setTable_detail(this.table_detail);
+        this.type_timeline = 1;
+        //openSource(this.path_signal);
+        tableDetail.showAndWait();
+    }
 }
