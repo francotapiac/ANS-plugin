@@ -74,6 +74,9 @@ public class ANSController extends CanalModel {
     @FXML
     private Label name_project;
 
+    @FXML
+    private Label labelValorCoherencia;
+
     // FXML Elements
     @FXML
     Pane root;
@@ -94,6 +97,10 @@ public class ANSController extends CanalModel {
     //Label panel información
     @FXML
     private Label alert;
+    @FXML
+    private Label tiempoLabel;
+    @FXML
+    private Label nameProjectLabel;
     @FXML
     private Label cardiac_coherence;
     @FXML
@@ -291,7 +298,7 @@ public class ANSController extends CanalModel {
         //Moviendo todos los paneles en su posición real
         //this.detail_panel.setLayoutX(this.pane_principal.getLayoutX());
         //this.detail_panel.setLayoutY(this.pane_principal.getLayoutY());
-
+        this.nameProjectLabel.setText("Proyecto "+ Paths.get(getProjectDir()).getFileName().toString());
         //this.pane_principal.toFront();
         this.tagDialog = new TagDialog();
         this.reportController = new ReportController();
@@ -310,7 +317,7 @@ public class ANSController extends CanalModel {
 
         this.combobox_emotions = new ComboBox<>();
         this.combobox_emotions.getItems().addAll(items);
-        this.combobox_emotions.setOnAction(e -> disable_combobox_emotion());
+        //this.combobox_emotions.setOnAction(e -> disable_combobox_emotion());
 
         /*combobox_emotions.valueProperty().addListener((ov, p1, p2) -> {
             System.out.println("Nueva Selección: " + p2);
@@ -432,6 +439,8 @@ public class ANSController extends CanalModel {
 
     // Lee cada elemento en banda tras mover el cursor
     public void seek(double millis) {
+
+        this.tiempoLabel.setText(format_number(millis/1000) + " segundos");
         System.out.println(millis);
         slide_chart.setValue(millis/1000);
         //Se activan botones
@@ -441,7 +450,7 @@ public class ANSController extends CanalModel {
 
         this.millis = format_number(millis);
         signalController.get_particular_data(format_number(millis));
-
+        labelValorCoherencia.setText("Valor coherencia: " + signalController.getRatio_coherence());
         alert_task = signalController.getCardiac_coherence_description();
         segment_time = signalController.getN_segment();
         emotion_task = signalController.getEmotion();
@@ -492,7 +501,7 @@ public class ANSController extends CanalModel {
                         this.btnTristeza.setStyle("-fx-background-color: transparent");
                         this.btnEnojo.setStyle("-fx-background-color: transparent");
                         this.btnFelicidad.setStyle("-fx-background-color: transparent");
-                        this.btnSorpresa.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnSorpresa.setStyle("-fx-background-color: rgba( 255, 217, 102, 0.8)");
                         this.btnEmotionMiedoFlag = false;
                         this.btnEmotionTristezaFlag = false;
                         this.btnEmotionEnojoFlag = false;
@@ -510,7 +519,7 @@ public class ANSController extends CanalModel {
                     this.btnEmotionSorpresaFlag = true;
                 } else if (this.btnFiltroFlag == true && this.btnEmotionSorpresaFlag == true){
                     this.btnSorpresa.setStyle("-fx-background-color: transparent");
-                    setColorTimelineEmotions("Sorpresa","9dc6d4");
+                    setColorTimelineEmotions("Sorpresa","81b622");
                     this.btnEmotionSorpresaFlag = false;
                 }
             }
@@ -524,7 +533,7 @@ public class ANSController extends CanalModel {
                         this.btnTristeza.setStyle("-fx-background-color: transparent");
                         this.btnEnojo.setStyle("-fx-background-color: transparent");
                         this.btnFelicidad.setStyle("-fx-background-color: transparent");
-                        this.btnMiedo.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnMiedo.setStyle("-fx-background-color: rgba( 7, 55, 99, 0.8)");
                         this.btnEmotionSorpresaFlag = false;
                         this.btnEmotionTristezaFlag = false;
                         this.btnEmotionEnojoFlag = false;
@@ -542,7 +551,7 @@ public class ANSController extends CanalModel {
                     this.btnEmotionMiedoFlag = true;
                 } else if (this.btnFiltroFlag == true && this.btnEmotionMiedoFlag == true){
                     this.btnMiedo.setStyle("-fx-background-color: transparent");
-                    setColorTimelineEmotions("Miedo","9dc6d4");
+                    setColorTimelineEmotions("Miedo","81b622");
                     this.btnEmotionMiedoFlag = false;
                 }
             }
@@ -552,7 +561,7 @@ public class ANSController extends CanalModel {
                 if(this.btnEdicionFlag == true){
                     if(btnEmotionTristezaFlag == false){
                         this.btnSorpresa.setStyle("-fx-background-color: transparent");
-                        this.btnTristeza.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnTristeza.setStyle("-fx-background-color: rgba( 217, 210, 233, 0.8)");
                         this.btnEnojo.setStyle("-fx-background-color: transparent");
                         this.btnFelicidad.setStyle("-fx-background-color: transparent");
                         this.btnMiedo.setStyle("-fx-background-color: transparent");
@@ -573,7 +582,7 @@ public class ANSController extends CanalModel {
                     this.btnEmotionTristezaFlag = true;
                 } else if (this.btnFiltroFlag == true && this.btnEmotionTristezaFlag == true){
                     this.btnTristeza.setStyle("-fx-background-color: transparent");
-                    setColorTimelineEmotions("Tristeza","9dc6d4");
+                    setColorTimelineEmotions("Tristeza","81b622");
                     this.btnEmotionTristezaFlag = false;
                 }
             }
@@ -585,7 +594,7 @@ public class ANSController extends CanalModel {
                         this.btnSorpresa.setStyle("-fx-background-color: transparent");
                         this.btnTristeza.setStyle("-fx-background-color: transparent");
                         this.btnEnojo.setStyle("-fx-background-color: transparent");
-                        this.btnFelicidad.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnFelicidad.setStyle("-fx-background-color: rgba( 103, 78, 167, 0.8)");
                         this.btnMiedo.setStyle("-fx-background-color: transparent");
                         this.btnEmotionSorpresaFlag = false;
                         this.btnEmotionTristezaFlag = false;
@@ -603,8 +612,8 @@ public class ANSController extends CanalModel {
                     setColorTimelineEmotions("Felicidad","674EA7");
                     this.btnEmotionFelicidadFlag = true;
                 } else if (this.btnFiltroFlag == true && this.btnEmotionFelicidadFlag == true){
-                    this.btnTristeza.setStyle("-fx-background-color: transparent");
-                    setColorTimelineEmotions("Felicidad","9dc6d4");
+                    this.btnFelicidad.setStyle("-fx-background-color: transparent");
+                    setColorTimelineEmotions("Felicidad","81b622");
                     this.btnEmotionFelicidadFlag = false;
                 }
             }
@@ -615,7 +624,7 @@ public class ANSController extends CanalModel {
                     if(btnEmotionEnojoFlag == false){
                         this.btnSorpresa.setStyle("-fx-background-color: transparent");
                         this.btnTristeza.setStyle("-fx-background-color: transparent");
-                        this.btnEnojo.setStyle("-fx-background-color: rgba( 118, 118, 118, 0.8)");
+                        this.btnEnojo.setStyle("-fx-background-color: rgba( 194, 58, 58, 0.8)");
                         this.btnFelicidad.setStyle("-fx-background-color: transparent");
                         this.btnMiedo.setStyle("-fx-background-color: transparent");
                         this.btnEmotionSorpresaFlag = false;
@@ -635,7 +644,7 @@ public class ANSController extends CanalModel {
                     this.btnEmotionEnojoFlag = true;
                 } else if (this.btnFiltroFlag == true && this.btnEmotionEnojoFlag == true){
                     this.btnEnojo.setStyle("-fx-background-color: transparent");
-                    setColorTimelineEmotions("Enojo","9dc6d4");
+                    setColorTimelineEmotions("Enojo","81b622");
                     this.btnEmotionEnojoFlag = false;
                 }
             }
@@ -671,7 +680,7 @@ public class ANSController extends CanalModel {
                             this.getTags().get(j).getLengthInMS(),
                             Color.valueOf(color),
                             this.getName(),
-                            this.getTags().get(j).getSource(), "2");
+                            this.getTags().get(j).getSource(), "2", signalController.getEmotion());
 
                     timelineElementEmotion.getChildren().set(i, timelineTagEmotion);
                     this.getTags().set(j, timelineTagEmotion);
@@ -704,12 +713,13 @@ public class ANSController extends CanalModel {
         this.path_signal_emotion = path + "_" + "emotion";
 
 
+
         this.source_name = Paths.get(path).getFileName().toString();
 
         //Párametros de la línea de tiempo
         Double sourceLength = get_length_signal_file(path);
         timelineElement = new TimelineElement(path,sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
-        timelineElementEmotion = new TimelineElement(path + "_" + "emotion",sourceLength,"Psicofisiológico", Color.valueOf("9dc6d4"));
+        timelineElementEmotion = new TimelineElement(path + "_" + "emotion",sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
         this.root.fireEvent(
                 new AddSourceEvent(this.getProjectDir() + "\\" + this.source_name, this.getName())
         );
@@ -732,7 +742,7 @@ public class ANSController extends CanalModel {
             this.btn_set_emotion.setDisable(true);
         }
         else{
-            this.btn_set_emotion.setDisable(false);
+            //this.btn_set_emotion.setDisable(false);
         }
         try {
             Emotion emotion_aux = new Emotion("");
@@ -944,6 +954,7 @@ public class ANSController extends CanalModel {
         this.chart.getXAxis().setLabel("Tiempo (s)");
         this.chart.getYAxis().setLabel("FCI (Hz)");
         this.chart.setCreateSymbols(false);
+        this.chart.setLegendVisible(false);
 
         //Inicializando gráfico
         //this.chart.getData().addAll(layoutController.getSeries_fci(), layoutController.getSeries_points());
@@ -975,6 +986,7 @@ public class ANSController extends CanalModel {
                 });
             render_millis_chart = newValue.doubleValue();
             render_check_signal(newValue.doubleValue(), 3.0); //Aumenta el contador
+            this.tiempoLabel.setText(format_number(render_millis_chart).toString() + " segundos");
         });
 
     }
@@ -990,7 +1002,7 @@ public class ANSController extends CanalModel {
             this.path_signal = path;
         }
         this.source_name = Paths.get(path_signal).getFileName().toString();
-        this.name_project.setText(this.source_name);
+        this.name_project.setText("Nombre insumo: " + this.source_name);
         //String complete_path = path + ".xls";
         String complete_path_segment_time_line = getProjectDir() + "/" + "senalAnalisis.xls";
         String complete_path_partitions_time_line = getProjectDir() + "/" + "senalParticiones.xls";
@@ -1022,7 +1034,7 @@ public class ANSController extends CanalModel {
             Double sourceLength = signalController.get_sourceLength();
 
             if(path.contains("_emotion")){
-                timelineElementEmotion = new TimelineElement(path +"_"+"emotion",sourceLength,"Psicofisiológico", Color.valueOf("9dc6d4"));
+                timelineElementEmotion = new TimelineElement(path +"_"+"emotion",sourceLength,"Psicofisiológico", Color.valueOf("81b622"));
 
                 System.out.println("timelineElementEmotion: " + timelineElementEmotion.getPathToSource());
                 return timelineElementEmotion;
@@ -1054,7 +1066,7 @@ public class ANSController extends CanalModel {
                     lengthInMS,
                     color,
                     this.getName(),
-                    source, "1");
+                    source, "1", "");
             this.timelineElement.getChildren().add(timelineTag);
             this.getTags().add(timelineTag);
             this.tagsSelected.add(timelineTag.selectedProperty());
@@ -1087,7 +1099,7 @@ public class ANSController extends CanalModel {
                     lengthInMS,
                     coloraux,
                     this.getName(),
-                    source, "2");
+                    source, "2", signalController.getEmotion());
             timelineTagEmotion.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
                 if (event.getButton() == MouseButton.PRIMARY){
                     seek(initTimeInMS);
@@ -1102,6 +1114,8 @@ public class ANSController extends CanalModel {
                 }
 
             });
+
+
             this.timelineElementEmotion.getChildren().add(timelineTagEmotion);
 
             this.getTags().add(timelineTagEmotion);
@@ -1509,7 +1523,7 @@ public class ANSController extends CanalModel {
         Float final_seg = format_number(Double.parseDouble(final_time_task))/1000;
         //segmento_panel.setText("Segmento: [" + initial_seg + "s , " + final_seg + "s]");
         //image_emotion.setImage(new Image(path_image_emotion));
-        this.emotion_abstract.setText(this.emotion_task);
+        this.emotion_abstract.setText("Emoción: " + this.emotion_task);
 
 
     }
@@ -1539,11 +1553,11 @@ public class ANSController extends CanalModel {
                         partial_final_time * 1000 - partial_initial_time * 1000,
                         color,
                         this.getName(),
-                        Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString(), "1");
+                        Paths.get(this.getProjectDir() + "/" + this.source_name).toAbsolutePath().toString(), "1", "");
                 this.timelineElement.getChildren().add(timelineTag);
                 this.getTags().add(timelineTag);
                 root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTag.getCode(),
-                        timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS(), "1"));
+                        timelineTag.getDescription(), timelineTag.getInitTimeInMS(), timelineTag.getLengthInMS(), "1", ""));
                 this.tagsSelected.add(timelineTag.selectedProperty());
                 this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
                         (observable, oldValue, newValue) -> {
@@ -1566,7 +1580,7 @@ public class ANSController extends CanalModel {
                     partial_final_time * 1000 - partial_initial_time * 1000,
                     colorEmotion,
                     this.getName(),
-                    Paths.get(this.getProjectDir() + "/" + this.source_name + "_emotion").toAbsolutePath().toString(), "2");
+                    Paths.get(this.getProjectDir() + "/" + this.source_name + "_emotion").toAbsolutePath().toString(), "2", signalController.getEmotion());
             timelineTagEmotion.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
                 if (event.getButton() == MouseButton.PRIMARY){
                     seek(timelineTagEmotion.getInitTimeInMS());
@@ -1584,7 +1598,7 @@ public class ANSController extends CanalModel {
             this.timelineElementEmotion.getChildren().add(timelineTagEmotion);
             this.getTags().add(timelineTagEmotion);
             root.fireEvent(new AddTagEvent(getName(), this.path_signal_emotion, timelineTagEmotion.getCode(),
-                    timelineTagEmotion.getDescription(), timelineTagEmotion.getInitTimeInMS(), timelineTagEmotion.getLengthInMS(), "2"));
+                    timelineTagEmotion.getDescription(), timelineTagEmotion.getInitTimeInMS(), timelineTagEmotion.getLengthInMS(), "2",signalController.getEmotion()));
             this.tagsSelected.add(timelineTagEmotion.selectedProperty());
             this.tagsSelected.get(this.tagsSelected.size() - 1).addListener(
                     (observable, oldValue, newValue) -> {
@@ -1708,8 +1722,8 @@ public class ANSController extends CanalModel {
                         desc.getText(),
                         this.timelineElementEmotion.getSourceLength() * 1000 * this.timelineElementEmotion.getSelectionX() / this.timelineElementEmotion.getWidth(),
                         this.timelineElementEmotion.getSourceLength() * 1000 * this.timelineElementEmotion.getSelectionWidth() / this.timelineElementEmotion.getWidth(),
-                        Color.LIGHTBLUE,
-                        this.getName(),this.path_signal_emotion, "2");
+                        Color.valueOf(colorEmotion(this.combobox_emotions.getValue())),
+                        this.getName(),this.path_signal_emotion, "2", signalController.getEmotion());
                 timelineTagEmotion.addEventFilter(MouseEvent.MOUSE_CLICKED, event -> {
                     if (event.getButton() == MouseButton.PRIMARY){
                         seek(timelineTagEmotion.getInitTimeInMS());
@@ -1727,7 +1741,7 @@ public class ANSController extends CanalModel {
                 this.timelineElementEmotion.getChildren().add(timelineTagEmotion);
                 this.getTags().add(timelineTagEmotion);
                 root.fireEvent(new AddTagEvent(getName(), this.path_signal, timelineTagEmotion.getCode(),
-                        timelineTagEmotion.getDescription(), timelineTagEmotion.getInitTimeInMS(), timelineTagEmotion.getLengthInMS(), "2"));
+                        timelineTagEmotion.getDescription(), timelineTagEmotion.getInitTimeInMS(), timelineTagEmotion.getLengthInMS(), "2", signalController.getEmotion()));
                 System.out.println( this.timelineElementEmotion.getSourceLength());
                 System.out.println(signalController.getSignal().getEnd_time_signal());
 
@@ -1790,7 +1804,7 @@ public class ANSController extends CanalModel {
 
         //Modificando Labels
         emotion_task = signalController.getEmotion();
-        this.emotion_abstract.setText(this.emotion_task);
+        this.emotion_abstract.setText("Emoción: "+this.emotion_task);
 
         //Desactivando botón para la emoción seleccionada en el segmento en específico
         this.btn_set_emotion.setDisable(true);
@@ -1810,7 +1824,7 @@ public class ANSController extends CanalModel {
 
         //Modificando Labels
         emotion_task = signalController.getEmotion();
-        this.emotion_abstract.setText(this.emotion_task);
+        this.emotion_abstract.setText("Emoción: " +this.emotion_task);
 
         //Desactivando botón para la emoción seleccionada en el segmento en específico
         //this.btn_set_emotion.setDisable(true);
@@ -1881,6 +1895,7 @@ public class ANSController extends CanalModel {
                                 //render_check_signal(render_millis_chart, 3.0);
                                 Platform.runLater(() -> {
                                     slide_chart.setValue(render_millis_chart); //Activa el listener ubicado en la sección render del método openSourceThread
+                                    tiempoLabel.setText(format_number(render_millis_chart).toString() + " segundos");
                                 });
 
                                 render_millis_chart = render_millis_chart + 1;
